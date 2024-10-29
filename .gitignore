@@ -1,0 +1,8 @@
+filesystem/
+build/
+assets/
+tiny3d/
+.vscode/
+hide
+*DS_Store
+*.Z64
