@@ -26,11 +26,15 @@ const MinigameDef minigame_def = {
 #define ATTACK_OFFSET       10.f
 #define ATTACK_RADIUS       5.f
 
-#define ATTACK_TIME_START   0.333f
-#define ATTACK_TIME_END     0.4f
+#define ATTACK_TIME_START   0.0f
+#define ATTACK_TIME_END     0.222f
+// #define ATTACK_TIME_START   0.333f
+// #define ATTACK_TIME_END     0.4f
 
 #define COUNTDOWN_DELAY     3.0f
-#define GO_DELAY            1.0f
+#define GO_DELAY            0.5f
+// #define GO_DELAY            1.0f
+
 #define DELAY               0.5f
 #define WIN_DELAY           5.0f
 #define WIN_SHOW_DELAY      2.0f
