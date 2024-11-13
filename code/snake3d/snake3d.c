@@ -478,6 +478,47 @@ void player_draw(player_data *player)
   }
 }
 
+void draw_rectangle() {
+
+  T3DMat4 modelMat; // matrix for our model, this is a "normal" float matrix
+  t3d_mat4_identity(&modelMat);
+  // Now allocate a fixed-point matrix, this is what t3d uses internally.
+  T3DMat4FP* modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+
+
+
+
+  // const T3DVec3 camPos = {{0,0,-18}};
+  // const T3DVec3 camTarget = {{0,0,0}};
+
+  // uint8_t colorAmbient[4] = {50, 50, 50, 0xFF};
+  // uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
+
+  T3DVec3 lightDirVec = {{0.0f, 0.0f, 1.0f}};
+  t3d_vec3_norm(&lightDirVec);
+
+  // Allocate vertices (make sure to have an uncached pointer before passing it to the API!)
+  // For performance reasons, 'T3DVertPacked' contains two vertices at once in one struct.
+  T3DVertPacked* vertices = malloc_uncached(sizeof(T3DVertPacked) * 2);
+
+  uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 0, 1}}); // normals are packed in a 5.6.5 format
+  vertices[0] = (T3DVertPacked){
+    .posA = {-16, -16, 0}, .rgbaA = 0xFF000FF, .normA = norm,
+    .posB = { 16, -16, 0}, .rgbaB = 0x00FF00FF, .normB = norm,
+  };
+
+  vertices[1] = (T3DVertPacked){
+    .posA = { 16,  16, 0}, .rgbaA = 0x0000FFFF, .normA = norm,
+    .posB = {-16,  16, 0}, .rgbaB = 0xFF00FFFF, .normB = norm,
+  };
+
+  T3DVec3 rotAxis = {{-1.0f, 2.5f, 0.25f}};
+  t3d_vec3_norm(&rotAxis);
+  // t3d_mat4_to_fixed(modelMatFP, &modelMat);
+  // t3d_matrix_push(modelMatFP); // Matrix load can be recorded as they DMA the data in internally
+
+}
+
 
 void player_draw_billboard(player_data *player, PlyNum playerNum)
 {
@@ -587,6 +628,10 @@ void minigame_loop(float deltaTime)
   t3d_light_set_ambient(colorAmbient);
   t3d_light_set_directional(0, colorDir, &lightDirVec);
   t3d_light_set_count(1);
+
+  draw_rectangle();
+
+
 
   rspq_block_run(dplMap);
   for (size_t i = 0; i < MAXPLAYERS; i++)
