@@ -10,17 +10,12 @@ int main()
   // setup debub
   debug_init_isviewer();
 	debug_init_usblog();
-
   joypad_init();
-
   // asset_init_compression(1);
 	asset_init_compression(2);
-
   dfs_init(DFS_DEFAULT_LOCATION);
   display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE_ANTIALIAS);
-
   rdpq_init();
-
   t3d_init((T3DInitParams){});
   T3DViewport viewport = t3d_viewport_create();
 
@@ -33,10 +28,8 @@ int main()
   // If you can't allocate uncached memory, remember to flush the cache after writing to it instead.
   T3DMat4FP* modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
 
-
   // camera
   const T3DVec3 camPos = {{0, 125.0f, 100.0f}};
-
   // const T3DVec3 camPos = {{0,10.0f,40.0f}};
   const T3DVec3 camTarget = {{0,0,0}};
 
@@ -53,32 +46,51 @@ int main()
   T3DModel *model = t3d_model_load("rom:/model.t3dm");
 
   // rotation angle
-  float rotAngle = 0.0f;
+  float posX = 0.0f;
+  float posY = 0.0f;
+  float rotAngleY = 0.0f;
+
+
   rspq_block_t *dplDraw = NULL;
 
-  // get joypad inputs
-  // joypad_inputs_t joypad = joypad_get_inputs(0);
-
-    //newDir.v[0] = (float)joypad.stick_x * 0.05f;
-    // newDir.v[2] = -(float)joypad.stick_y * 0.05f;
-    // speed = sqrtf(t3d_vec3_len2(&newDir));
   // infinite loop
   for(;;)
   {
     joypad_inputs_t joypad = joypad_get_inputs(0);
-    rotAngle -= (float)joypad.stick_x * 0.05f;
-    // rotAngle -= 0.02f;
+    joypad_buttons_t btn = joypad_get_buttons_pressed(0);
+    joypad_buttons_t btnHeld = joypad_get_buttons_held(0);
+
     float modelScale = 0.1f;
+
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(85.0f), 10.0f, 150.0f);
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+    // t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,-1,0}});
+
 
     // slowly rotate model, for more information on matrices and how to draw objects
     // see the example: "03_objects"
-    t3d_mat4_from_srt_euler(&modelMat,
-      (float[3]){modelScale, modelScale, modelScale},
-      (float[3]){0.0f, rotAngle*0.2f, rotAngle},
-      (float[3]){0,0,0}
-    );
+
+    //https://n64squid.com/homebrew/libdragon/controllers/
+    if (btn.a || btnHeld.a) {
+      rotAngleY = rotAngleY + 0.05f;
+      t3d_mat4_from_srt_euler(&modelMat,
+        (float[3]){modelScale, modelScale, modelScale},
+        (float[3]){0.0f, 0.0f,rotAngleY},
+        (float[3]){posX,posY,0}
+      );
+    }
+
+    if (joypad.stick_x || joypad.stick_y) {
+     //move model if x
+      posX += (float)joypad.stick_x * 0.05f;
+      posY += (float)joypad.stick_y * -0.05f;
+      t3d_mat4_from_srt_euler(&modelMat,
+        (float[3]){modelScale, modelScale, modelScale},
+        (float[3]){0.0f, 0.0f,rotAngleY},
+        (float[3]){posX,posY,0}
+      );
+    }
+
     t3d_mat4_to_fixed(modelMatFP, &modelMat);
 
 
