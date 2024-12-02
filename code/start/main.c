@@ -2,12 +2,13 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
 #include <t3d/t3dmodel.h>
+#include <stdlib.h>
 
 
 // Main function
 int main()
 {
-  // setup debub
+  // setup debug
   debug_init_isviewer();
 	debug_init_usblog();
   joypad_init();
@@ -18,6 +19,7 @@ int main()
   rdpq_init();
   t3d_init((T3DInitParams){});
   T3DViewport viewport = t3d_viewport_create();
+  display_context_t disp;
 
 
   T3DMat4 modelMat; // matrix for our model, this is a "normal" float matrix
@@ -29,8 +31,8 @@ int main()
   T3DMat4FP* modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
 
   // camera
-  const T3DVec3 camPos = {{0, 125.0f, 100.0f}};
-  // const T3DVec3 camPos = {{0,10.0f,40.0f}};
+  // const T3DVec3 camPos = {{0, 90.0f, 10.0f}};
+  const T3DVec3 camPos = {{0,10.0f,40.0f}};
   const T3DVec3 camTarget = {{0,0,0}};
 
   // ambient color
@@ -53,6 +55,13 @@ int main()
 
   rspq_block_t *dplDraw = NULL;
 
+
+
+
+  sprite_t *fulgore = {
+    sprite_load("rom:/fulgore.sprite"),
+  };
+
   // infinite loop
   for(;;)
   {
@@ -62,9 +71,9 @@ int main()
 
     float modelScale = 0.1f;
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(85.0f), 10.0f, 150.0f);
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(85.0f), 10.0f, 90.0f);
     // t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,-1,0}});
+    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
     // slowly rotate model, for more information on matrices and how to draw objects
@@ -75,7 +84,7 @@ int main()
       rotAngleY = rotAngleY + 0.05f;
       t3d_mat4_from_srt_euler(&modelMat,
         (float[3]){modelScale, modelScale, modelScale},
-        (float[3]){0.0f, 0.0f,rotAngleY},
+        (float[3]){0.0f,rotAngleY,0.0f},
         (float[3]){posX,posY,0}
       );
     }
@@ -86,12 +95,13 @@ int main()
       posY += (float)joypad.stick_y * -0.05f;
       t3d_mat4_from_srt_euler(&modelMat,
         (float[3]){modelScale, modelScale, modelScale},
-        (float[3]){0.0f, 0.0f,rotAngleY},
+        (float[3]){0.0f,rotAngleY,0.0f},
         (float[3]){posX,posY,0}
       );
     }
 
     t3d_mat4_to_fixed(modelMatFP, &modelMat);
+
 
 
     // ======== Draw ======== //
@@ -132,3 +142,6 @@ int main()
   t3d_destroy();
   return 0;
 }
+
+
+

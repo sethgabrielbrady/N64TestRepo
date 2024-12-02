@@ -6,16 +6,23 @@ include $(T3D_INST)/t3d.mk
 
 N64_CFLAGS += -std=gnu2x
 
+#https://github.com/N64brew-Game-Jam-2023/alien-sun/blob/main/Makefile
+
 src = main.c
 
 assets_png = $(wildcard assets/*.png)
 assets_gltf = $(wildcard assets/*.glb)
+
+
+
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
 			  $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
 			  $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.t3dm)))
 
-
 all: startProg.z64
+
+#https://github.com/breadbored/N64-RPG/blob/main/Makefile
+# mksprite 16 2 2 assets/venusaur.png filesystem/venusaur.sprite
 
 filesystem/%.sprite: assets/%.png
 	@mkdir -p $(dir $@)
