@@ -21,10 +21,9 @@ T3DVec3 lightDirVec;
 rspq_syncpoint_t syncPoint;
 sprite_t* fulgore;
 float posX = 0.0f;
-float posY = 0.0f;
+float posY = 65.0f;
 joypad_inputs_t joypad;
 
-// sprite_t* fulgore = sprite_load("rom:/fulgoresing.sprite");
 
 typedef struct rdpq_blitparms_s {
 	rdpq_tile_t tile;
@@ -65,9 +64,6 @@ rdpq_blitparms_s params = {
 };
 
 
-
-
-
 void game_init(void)
 {
   debug_init_isviewer();
@@ -88,10 +84,20 @@ void game_init(void)
   viewport = t3d_viewport_create();
 
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
-  t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, -10});
+  t3d_mat4fp_from_srt_euler(mapMatFP,
+  (float[3]){0.3f, 0.3f, 0.3f},
+  (float[3]){0, 0, 0},
+  (float[3]){0, 0, -10}
+  );
 
-  camPos = (T3DVec3){{0, 125.0f, 100.0f}};
-  camTarget = (T3DVec3){{0, 0, 40}};
+  //  t3d_mat4_from_srt_euler(&modelMat,
+  //       (float[3]){modelScale, modelScale, modelScale},
+  //       (float[3]){0.0f,rotAngleY,0.0f},
+  //       (float[3]){posX,posY,0}
+  //     );
+
+  camPos = (T3DVec3){{0, 30.0f, 115.0f}};
+  camTarget = (T3DVec3){{0, 0, 45}};
 
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
@@ -128,7 +134,8 @@ void game_loop(float deltaTime)
   t3d_frame_start();
   t3d_viewport_attach(&viewport);
 
-  t3d_screen_clear_color(RGBA32(255, 255, 255, 0xFF));
+  // also bg color?
+  t3d_screen_clear_color(RGBA32(00, 00, 102, 0xFF));
   // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
   t3d_screen_clear_depth();
 
@@ -146,10 +153,19 @@ void game_loop(float deltaTime)
   rdpq_set_mode_standard();
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-  joypad_inputs_t joypad = joypad_get_inputs(0);
-  posX += (float)joypad.stick_x * -0.05f;
-  posY += (float)joypad.stick_y * -0.05f;
-  params.scale_x = params.scale_y = 0.9f;
+  // joypad_inputs_t joypad = joypad_get_inputs(0);
+  joypad_buttons_t btn = joypad_get_buttons_pressed(0);
+  joypad_buttons_t btnHeld = joypad_get_buttons_held(0);
+  // posX += (float)btn.left * -0.05f;
+  // posX += (float)btn.right * 0.05f;
+
+  if (btn.d_left || btnHeld.d_left) {
+      posX += -1.0f;
+  }
+  if (btn.d_right || btnHeld.d_right) {
+    posX += 1.0f;
+  }
+  params.scale_x = params.scale_y = 1.0f;
   rdpq_sprite_blit(fulgore, posX, posY, &params);
   //rspq_wait();
   rdpq_sync_tile();
