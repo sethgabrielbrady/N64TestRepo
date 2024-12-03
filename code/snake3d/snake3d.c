@@ -485,15 +485,6 @@ void draw_rectangle() {
   // Now allocate a fixed-point matrix, this is what t3d uses internally.
   T3DMat4FP* modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
 
-
-
-
-  // const T3DVec3 camPos = {{0,0,-18}};
-  // const T3DVec3 camTarget = {{0,0,0}};
-
-  // uint8_t colorAmbient[4] = {50, 50, 50, 0xFF};
-  // uint8_t colorDir[4]     = {0xFF, 0xFF, 0xFF, 0xFF};
-
   T3DVec3 lightDirVec = {{0.0f, 0.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
