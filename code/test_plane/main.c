@@ -22,6 +22,8 @@ rspq_syncpoint_t syncPoint;
 sprite_t* fulgore;
 float posX = 0.0f;
 float posY = 65.0f;
+float rotAngleY = 0.0f;
+float rotAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
 
 
@@ -85,16 +87,10 @@ void game_init(void)
 
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
   t3d_mat4fp_from_srt_euler(mapMatFP,
-  (float[3]){0.3f, 0.3f, 0.3f},
-  (float[3]){0, 0, 0},
-  (float[3]){0, 0, -10}
+    (float[3]){0.3f, 0.3f, 0.3f},
+    (float[3]){0, 0, 0},
+    (float[3]){0, 0, -10}
   );
-
-  //  t3d_mat4_from_srt_euler(&modelMat,
-  //       (float[3]){modelScale, modelScale, modelScale},
-  //       (float[3]){0.0f,rotAngleY,0.0f},
-  //       (float[3]){posX,posY,0}
-  //     );
 
   camPos = (T3DVec3){{0, 30.0f, 115.0f}};
   camTarget = (T3DVec3){{0, 0, 45}};
@@ -120,8 +116,8 @@ void game_init(void)
 
 void game_loop(float deltaTime)
 {
-  uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
-  uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
+  uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
+  uint8_t colorDir[4]     = {0xAA, 0xAA, 0xAA, 0xFF};
 
   t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
   t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
@@ -138,7 +134,6 @@ void game_loop(float deltaTime)
   t3d_screen_clear_color(RGBA32(00, 00, 102, 0xFF));
   // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
   t3d_screen_clear_depth();
-
   t3d_light_set_ambient(colorAmbient);
   t3d_light_set_directional(0, colorDir, &lightDirVec);
   t3d_light_set_count(1);
@@ -148,7 +143,7 @@ void game_loop(float deltaTime)
   syncPoint = rspq_syncpoint_new();
 
 
-     // add sprite
+  // add sprite
   // rdpq_set_mode_copy(true);
   rdpq_set_mode_standard();
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
@@ -156,16 +151,27 @@ void game_loop(float deltaTime)
   // joypad_inputs_t joypad = joypad_get_inputs(0);
   joypad_buttons_t btn = joypad_get_buttons_pressed(0);
   joypad_buttons_t btnHeld = joypad_get_buttons_held(0);
-  // posX += (float)btn.left * -0.05f;
-  // posX += (float)btn.right * 0.05f;
+
 
   if (btn.d_left || btnHeld.d_left) {
-      posX += -1.0f;
+    posX += -1.0f;
+    rotAngleY += -0.0025f;
   }
   if (btn.d_right || btnHeld.d_right) {
     posX += 1.0f;
+    rotAngleY += 0.0025f;
   }
-  params.scale_x = params.scale_y = 1.0f;
+
+if (rotAngleY != rotAngleYCopy) {
+  t3d_mat4fp_from_srt_euler(mapMatFP,
+    (float[3]){0.3f, 0.3f, 0.3f},
+    (float[3]){0, rotAngleY, 0},
+    (float[3]){0, 0, -10}
+  );
+  rotAngleYCopy = rotAngleY;
+}
+
+
   rdpq_sprite_blit(fulgore, posX, posY, &params);
   //rspq_wait();
   rdpq_sync_tile();
