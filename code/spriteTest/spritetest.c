@@ -7,12 +7,12 @@
 // #include <stdlib.h>
 
 //Animation frame size defines
-#define ANIM_FRAME_W 141
-#define ANIM_FRAME_H 216
+#define ANIM_FRAME_W 102.4
+#define ANIM_FRAME_H 128
 
 //Animation frame timing defines
-#define ANIM_FRAME_DELAY 3.5
-#define ANIM_FRAME_MAX 5
+#define ANIM_FRAME_DELAY 8
+#define ANIM_FRAME_MAX 10
 
 #define KNIGHT_MAX 1
 
@@ -81,7 +81,7 @@ int main()
     //Init joypad
     joypad_init();
     //Load Sprite Sheet
-    sheet_knight = sprite_load("rom:/fulgore.sprite");
+    sheet_knight = sprite_load("rom:/fulgorestand.sprite");
     //Initialize left fulgore
     knights[0].x = (display_get_width()/2)-25;
     knights[0].y = display_get_height()-15;

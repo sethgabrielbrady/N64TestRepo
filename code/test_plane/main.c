@@ -65,7 +65,6 @@ rdpq_blitparms_s params = {
   .ny = 0,
 };
 
-
 void game_init(void)
 {
   debug_init_isviewer();
@@ -110,8 +109,6 @@ void game_init(void)
   dplMap = rspq_block_end();
 
 }
-
-
 
 
 void game_loop(float deltaTime)
@@ -173,6 +170,10 @@ if (rotAngleY != rotAngleYCopy) {
 
 
   rdpq_sprite_blit(fulgore, posX, posY, &params);
+
+
+
+
   //rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
