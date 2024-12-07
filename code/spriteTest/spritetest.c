@@ -7,14 +7,14 @@
 // #include <stdlib.h>
 
 //Animation frame size defines
-#define ANIM_FRAME_W 102.4
-#define ANIM_FRAME_H 128
+#define ANIM_FRAME_W 100
+#define ANIM_FRAME_H 130
 
 //Animation frame timing defines
-#define ANIM_FRAME_DELAY 8
+#define ANIM_FRAME_DELAY 5
 #define ANIM_FRAME_MAX 10
 
-#define KNIGHT_MAX 1
+#define KNIGHT_MAX 2
 
 //Structure for knight sprite
 typedef struct {
@@ -27,6 +27,8 @@ typedef struct {
 
 static knight_data knights[2];
 static sprite_t *sheet_knight;
+static sprite_t *sheet_knight2;
+static sprite_t *current_knight;
 
 void render(void)
 {
@@ -37,9 +39,15 @@ void render(void)
     rdpq_set_mode_standard();
     rdpq_mode_alphacompare(1); // colorkey (draw pixel with alpha >= 1)
     for(int i=0; i<KNIGHT_MAX; i++) {
+
+        if (i>0) {
+            current_knight = sheet_knight2;
+        } else {
+            current_knight = sheet_knight;
+        }
         int frame = knights[i].time/ANIM_FRAME_DELAY; //Calculate knight frame
         //Draw knight sprite
-        rdpq_sprite_blit(sheet_knight, knights[i].x, knights[i].y, &(rdpq_blitparms_t){
+        rdpq_sprite_blit(current_knight, knights[i].x, knights[i].y, &(rdpq_blitparms_t){
             .s0 = frame*ANIM_FRAME_W, //Extract correct sprite from sheet
             //Set sprite center to bottom-center
             .cx = ANIM_FRAME_W/2,
@@ -47,6 +55,7 @@ void render(void)
             .width = ANIM_FRAME_W, //Extract correct width from sheet
             .flip_x = knights[i].flip
         });
+
     }
     //Detach the screen
     rdpq_detach_show();
@@ -60,7 +69,7 @@ void update(void)
             //Stop attack at end of animation
             if(knights[i].time >= ANIM_FRAME_DELAY*ANIM_FRAME_MAX) {
                 knights[i].time = 0;
-                knights[i].attack = false;
+                // knights[i].attack = false;
             }
         }
     }
@@ -81,14 +90,15 @@ int main()
     //Init joypad
     joypad_init();
     //Load Sprite Sheet
-    sheet_knight = sprite_load("rom:/fulgorestand.sprite");
+    sheet_knight = sprite_load("rom:/fulgorestandhq.sprite");
+    sheet_knight2 = sprite_load("rom:/fulgorestandlq.sprite");
     //Initialize left fulgore
-    knights[0].x = (display_get_width()/2)-25;
+    knights[0].x = (display_get_width()/2)-50;
     knights[0].y = display_get_height()-15;
     // //Initialize right knight
-    // knights[1].x = (display_get_width()/2)+25;
-    // knights[1].y = knights[0].y;
-    // knights[1].flip = true;
+    knights[1].x = (display_get_width()/2)+50;
+    knights[1].y = knights[0].y;
+    knights[1].flip = true;
     while (1)
     {
         render();
@@ -99,7 +109,7 @@ int main()
         joypad_buttons_t ckeys = joypad_get_buttons_pressed(JOYPAD_PORT_1);
         //Set attack for left knight
         if(ckeys.a) {
-            knights[0].attack = true;
+            knights[0].attack = !knights[0].attack;
         }
         //Set attack for right knight
         if(ckeys.b) {

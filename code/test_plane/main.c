@@ -21,7 +21,7 @@ T3DVec3 lightDirVec;
 rspq_syncpoint_t syncPoint;
 sprite_t* fulgore;
 float posX = 0.0f;
-float posY = 65.0f;
+float posY = 105.0f;
 float rotAngleY = 0.0f;
 float rotAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
@@ -97,7 +97,7 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  fulgore = sprite_load("rom:/fulgoresing.sprite");
+  fulgore = sprite_load("rom:/fulgstand2.sprite");
 
   modelMap = t3d_model_load("rom:/map.t3dm");
 
@@ -152,11 +152,11 @@ void game_loop(float deltaTime)
 
   if (btn.d_left || btnHeld.d_left) {
     posX += -1.0f;
-    rotAngleY += -0.0025f;
+    rotAngleY += -0.00095f;
   }
   if (btn.d_right || btnHeld.d_right) {
     posX += 1.0f;
-    rotAngleY += 0.0025f;
+    rotAngleY += 0.00095f;
   }
 
 if (rotAngleY != rotAngleYCopy) {
