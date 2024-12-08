@@ -6,40 +6,44 @@
 // #include <t3d/t3dmodel.h>
 // #include <stdlib.h>
 
+
+//combine the animations into 1 sprite sheet
+// look at putting the sprite on a triangle or a plane
+
 //Animation frame size defines
-#define ANIM_FRAME_W 110
-#define ANIM_FRAME_H 140
-// #define ANIM_FRAME_W 100
-// #define ANIM_FRAME_H 130
+#define ANIM_FRAME_W_WALK 110
+#define ANIM_FRAME_H_WALK 140
+
+#define ANIM_FRAME_W_STAND 100
+#define ANIM_FRAME_H_STAND 130
+#define ANIM_FULG_STAND_FRAME_MAX 10
+
+
 
 //Animation frame timing defines
-#define ANIM_FRAME_DELAY 3.5
-#define ANIM_FRAME_MAX 15
-#define ANIM_COL_MAX 5
-#define ANIM_ROW_MAX 3
+#define ANIM_FRAME_DELAY 4.5
+#define ANIM_FULG_WALK_FRAME_MAX 15
+#define ANIM_FULG_WALK_COL_MAX 5
+#define ANIM_FULG_WALK_ROW_MAX 3
 
-#define KNIGHT_MAX 2
 
-int heightCounter = 0;
-int currentFrame = 0;
-char str[2];
+int tile_sheet_row_index = 0;
 int frame;
+char str[32];
 
-
-//Structure for knight sprite
+//Structure for fighter sprite
 typedef struct {
     float x;
     float y;
-    bool attack;
+    bool walk_forward;
     bool flip;
     int time;
 
-} knight_data;
+} fighter_data;
 
-static knight_data knights[2];
-static sprite_t *sheet_knight;
-static sprite_t *sheet_knight2;
-static sprite_t *current_knight;
+static fighter_data fighter;
+static sprite_t * fighter_walk;
+static sprite_t * fighter_stand;
 display_context_t disp;
 
 void render(void)
@@ -52,67 +56,73 @@ void render(void)
     rdpq_mode_alphacompare(1); // colorkey (draw pixel with alpha >= 1)
 
 
-    for(int i=0; i<KNIGHT_MAX; i++) {
-
-        if (i>0) {
-            current_knight = sheet_knight2;
-        } else {
-            current_knight = sheet_knight;
+    if(fighter.walk_forward )
+    {
+        if (tile_sheet_row_index == ANIM_FULG_WALK_ROW_MAX) {
+            tile_sheet_row_index = 0;
         }
-
-        if (heightCounter == ANIM_ROW_MAX) {
-            heightCounter = 0;
-        }
-        frame = knights[i].time/ANIM_FRAME_DELAY; //Calculate knight frame
-        //Draw knight sprite
-
-        rdpq_sprite_blit(current_knight, knights[i].x, knights[i].y, &(rdpq_blitparms_t){
-            .s0 = 110*frame,
-            .t0 = 140*heightCounter,
-            // .s0 = frame*ANIM_FRAME_W, //Extract correct sprite from sheet
+        frame = 0;
+        frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
+        //Draw fighter sprite
+        rdpq_sprite_blit(fighter_walk, fighter.x, fighter.y, &(rdpq_blitparms_t){
+            .s0 = frame*ANIM_FRAME_W_WALK, //Extract correct sprite from sheet
+            .t0 = ANIM_FRAME_H_WALK*tile_sheet_row_index,
             // .t0 = 0,
             //Set sprite center to bottom-center
-            .cx = ANIM_FRAME_W/2,
-            .cy = ANIM_FRAME_H,
-            .width = ANIM_FRAME_W, //Extract correct width from sheet
-            .height = ANIM_FRAME_H,
-            .flip_x = knights[i].flip,
+            .cx = ANIM_FRAME_W_WALK/2,
+            .cy = ANIM_FRAME_H_WALK,
+            .width = ANIM_FRAME_W_WALK, //Extract correct width from sheet
+            .height = ANIM_FRAME_H_WALK
         });
-
     }
+    else
+    {
+        frame = 0;
+        frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
+        //Draw fighter sprite
+        rdpq_sprite_blit(fighter_stand, fighter.x, fighter.y, &(rdpq_blitparms_t){
+            .s0 = frame*ANIM_FRAME_W_STAND, //Extract correct sprite from sheet
+            .t0 = tile_sheet_row_index,
+            //Set sprite center to bottom-center
+            .cx = ANIM_FRAME_W_STAND/2,
+            .cy = ANIM_FRAME_H_STAND,
+            .width = ANIM_FRAME_W_STAND, //Extract correct width from sheet
+            .height = ANIM_FRAME_H_STAND
+        });
+    }
+
     //Detach the screen
     rdpq_detach_show();
 }
 
 void update(void)
 {
-    for(int i=0; i<KNIGHT_MAX; i++) {
-        if(knights[i].attack ) {
-            knights[i].time++; //Increment time
-            //Stop attack at end of animation
+    if(fighter.walk_forward ) {
 
+        fighter.time++; //Increment time
+        //Stop walk at end of animation
 
-        //  if(knights[i].time >= ANIM_FRAME_DELAY*ANIM_FRAME_MAX) {
+        if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
+            tile_sheet_row_index += 1;
+            fighter.time = 0;
 
-            // if  (heightCounter == ANIM_ROW_MAX ) {
-            //     knights[i].time = 0;
-            //     heightCounter = 0;
-            //     knights[i].attack = false;
-            // }
-
-            if (knights[i].time >= ANIM_FRAME_DELAY*ANIM_COL_MAX) {
-                heightCounter += 1;
-                knights[i].time = 0;
-
-                if(knights[i].time >= ANIM_FRAME_DELAY*ANIM_FRAME_MAX) {
-                    knights[i].time = 0;
-                    heightCounter = 0;
-                    knights[i].attack = false;
-                }
+            if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_FRAME_MAX) {
+                fighter.time = 0;
+                tile_sheet_row_index = 0;
+                fighter.walk_forward = false;
             }
+        }
+    } else {
+        tile_sheet_row_index = 0;
+        fighter.time++;
+        if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_FRAME_MAX)
+        {
+            fighter.time = 0;
+            tile_sheet_row_index = 0;
         }
     }
 }
+
 
 int main()
 {
@@ -129,44 +139,41 @@ int main()
     //Init joypad
     joypad_init();
     //Load Sprite Sheet
-    sheet_knight = sprite_load("rom:/fulgorewalkhq.sprite");
-    sheet_knight2 = sprite_load("rom:/fulgorewalklq.sprite");
+    fighter_walk = sprite_load("rom:/fulgorewalkhq.sprite");
+    fighter_stand = sprite_load("rom:/fulgorestandhq.sprite");
     //Initialize left fulgore
-    knights[0].x = (display_get_width()/2)-50;
-    knights[0].y = display_get_height()-15;
-    // //Initialize right knight
-    knights[1].x = (display_get_width()/2)+50;
-    knights[1].y = knights[0].y;
-    knights[1].flip = true;
+    fighter.x = (display_get_width()/2)-50;
+    fighter.y = display_get_height()-15;
 
-
-
-    //display_context_t disp = 0;
     while (1)
     {
         render();
         update();
+
+        // display_context_t disp = 0;
         // while (!(disp = display_lock()));
         // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 0));
-        // sprintf( str, "%d", heightCounter);
-
+        // sprintf( str, "%d", tile_sheet_row_index);
         // graphics_draw_text(disp, 10, 10, str );
         // display_show(disp);
-
-
 
         //Read joypad
         joypad_poll();
         joypad_buttons_t ckeys = joypad_get_buttons_pressed(JOYPAD_PORT_1);
-        //Set attack for left knight
+        joypad_buttons_t btnHeld = joypad_get_buttons_held(JOYPAD_PORT_1);
+        //Set walk for left fighter
         // Draw text on the screen
-        if(ckeys.a) {
-            knights[0].attack = !knights[0].attack;
+        if(btnHeld.d_right) {
+            fighter.walk_forward = true;
+        }else {
+            fighter.walk_forward = false;
+            tile_sheet_row_index = 0;
         }
-        //Set attack for right knight
-        if(ckeys.b) {
-            knights[1].attack = true;
-        }
+
+        // //Set attack for right fighter
+        // if(ckeys.b) {
+        //     fighter.attack = true;
+        // }
     }
 }
 

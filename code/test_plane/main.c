@@ -171,9 +171,6 @@ if (rotAngleY != rotAngleYCopy) {
 
   rdpq_sprite_blit(fulgore, posX, posY, &params);
 
-
-
-
   //rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
