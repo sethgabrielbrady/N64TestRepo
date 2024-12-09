@@ -48,7 +48,7 @@ joypad_inputs_t joypad;
 int current_sheet_row_index = 0;
 int walk_start_index = 2;
 int standing_start_index = 0;
-
+float walk_speed = 0.90;
 int frame;
 typedef struct {
     float x;
@@ -239,39 +239,27 @@ void check_controller_state(void) {
     joypad_buttons_t btnHeld = joypad_get_buttons_held(JOYPAD_PORT_1);
     joypad_buttons_t btnReleased = joypad_get_buttons_released(JOYPAD_PORT_1);
 
-    if (btnPressed.d_right)
+    if (btnPressed.d_right || btnPressed.d_left)
     {
         fighter.time = 0;
         fighter.walk_forward = true;
         fighter.idle = false;
         current_sheet_row_index = walk_start_index;
-        // fighter.flip = false;
-
-    }
-
-    if (btnPressed.d_left)
-    {
-        fighter.time = 0;
-        fighter.walk_forward = true;
-        fighter.idle = false;
-        current_sheet_row_index = walk_start_index;
-        // fighter.flip = true;
-
     }
 
     if (btnHeld.d_right)
     {
-        posX += 0.85f;
+        posX += walk_speed;
         rotBGAngleY += -0.00095f;
     }
     if (btnHeld.d_left)
     {
-        posX -= 0.85f;
+        posX -= walk_speed;
         rotBGAngleY += 0.00095f;
 
     }
 
-    if (btnReleased.d_right)
+    if (btnReleased.d_right || btnReleased.d_left)
     {
         fighter.idle = true;
         fighter.walk_forward = false;
