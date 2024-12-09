@@ -11,12 +11,12 @@
 // look at putting the sprite on a triangle or a plane
 
 //Animation frame size defines
-#define ANIM_FRAME_W_WALK 110
-#define ANIM_FRAME_H_WALK 140
+#define ANIM_FRAME_W 110
+#define ANIM_FRAME_H 140
 
-#define ANIM_FRAME_W_STAND 100
-#define ANIM_FRAME_H_STAND 130
 #define ANIM_FULG_STAND_FRAME_MAX 10
+#define ANIM_FULG_STAND_ROW_MAX 5
+
 
 
 
@@ -24,11 +24,13 @@
 #define ANIM_FRAME_DELAY 4.5
 #define ANIM_FULG_WALK_FRAME_MAX 15
 #define ANIM_FULG_WALK_COL_MAX 5
-#define ANIM_FULG_WALK_ROW_MAX 3
+#define ANIM_FULG_WALK_ROW_MAX 5
 
 
 int tile_sheet_row_index = 0;
+int walk_start_index = 2;
 int frame;
+int sheet_index_start = 0;
 char str[32];
 
 //Structure for fighter sprite
@@ -42,8 +44,7 @@ typedef struct {
 } fighter_data;
 
 static fighter_data fighter;
-static sprite_t * fighter_walk;
-static sprite_t * fighter_stand;
+static sprite_t * fighter_1;
 display_context_t disp;
 
 void render(void)
@@ -59,37 +60,29 @@ void render(void)
     if(fighter.walk_forward )
     {
         if (tile_sheet_row_index == ANIM_FULG_WALK_ROW_MAX) {
-            tile_sheet_row_index = 0;
+            tile_sheet_row_index = walk_start_index;
+            sheet_index_start = ANIM_FRAME_H*tile_sheet_row_index;
         }
-        frame = 0;
-        frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
-        //Draw fighter sprite
-        rdpq_sprite_blit(fighter_walk, fighter.x, fighter.y, &(rdpq_blitparms_t){
-            .s0 = frame*ANIM_FRAME_W_WALK, //Extract correct sprite from sheet
-            .t0 = ANIM_FRAME_H_WALK*tile_sheet_row_index,
-            // .t0 = 0,
-            //Set sprite center to bottom-center
-            .cx = ANIM_FRAME_W_WALK/2,
-            .cy = ANIM_FRAME_H_WALK,
-            .width = ANIM_FRAME_W_WALK, //Extract correct width from sheet
-            .height = ANIM_FRAME_H_WALK
-        });
     }
     else
     {
-        frame = 0;
-        frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
-        //Draw fighter sprite
-        rdpq_sprite_blit(fighter_stand, fighter.x, fighter.y, &(rdpq_blitparms_t){
-            .s0 = frame*ANIM_FRAME_W_STAND, //Extract correct sprite from sheet
-            .t0 = tile_sheet_row_index,
-            //Set sprite center to bottom-center
-            .cx = ANIM_FRAME_W_STAND/2,
-            .cy = ANIM_FRAME_H_STAND,
-            .width = ANIM_FRAME_W_STAND, //Extract correct width from sheet
-            .height = ANIM_FRAME_H_STAND
-        });
+        sheet_index_start = 0;
+        tile_sheet_row_index = 0;
     }
+
+    frame = 0;
+    frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
+    //Draw fighter sprite
+    rdpq_sprite_blit(fighter_1, fighter.x, fighter.y, &(rdpq_blitparms_t){
+        .s0 = frame*ANIM_FRAME_W, //Extract correct sprite from sheet
+        .t0 = sheet_index_start,
+        // .t0 = 0,
+        //Set sprite center to bottom-center
+        .cx = ANIM_FRAME_W/2,
+        .cy = ANIM_FRAME_H,
+        .width = ANIM_FRAME_W, //Extract correct width from sheet
+        .height = ANIM_FRAME_H
+    });
 
     //Detach the screen
     rdpq_detach_show();
@@ -108,17 +101,20 @@ void update(void)
 
             if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_FRAME_MAX) {
                 fighter.time = 0;
-                tile_sheet_row_index = 0;
+                tile_sheet_row_index = 2;
                 fighter.walk_forward = false;
             }
         }
     } else {
         tile_sheet_row_index = 0;
         fighter.time++;
-        if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_FRAME_MAX)
+
+         if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_ROW_MAX) {
+            tile_sheet_row_index += 1;
+        } else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_FRAME_MAX)
         {
-            fighter.time = 0;
             tile_sheet_row_index = 0;
+            fighter.time = 0;
         }
     }
 }
@@ -139,8 +135,7 @@ int main()
     //Init joypad
     joypad_init();
     //Load Sprite Sheet
-    fighter_walk = sprite_load("rom:/fulgorewalkhq.sprite");
-    fighter_stand = sprite_load("rom:/fulgorestandhq.sprite");
+    fighter_1 = sprite_load("rom:/fulgoresheetv1.sprite");
     //Initialize left fulgore
     fighter.x = (display_get_width()/2)-50;
     fighter.y = display_get_height()-15;
