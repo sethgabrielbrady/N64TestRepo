@@ -203,7 +203,7 @@ if (rotBGAngleY != rotBGAngleYCopy) {
 
 
   get_fighter_state();
-
+  frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
   rdpq_sprite_blit(fulgore, posX, posY, &(rdpq_blitparms_t){
         .s0 = frame*ANIM_FRAME_W, //Extract correct sprite from sheet
         .t0 = current_sheet_row_index*ANIM_FRAME_H,
@@ -220,6 +220,8 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
+      update();
+
 }
 
 void game_cleanup(void)
@@ -288,9 +290,7 @@ int main()
   while(1)
   {
     game_loop(0.0f);
-    update();
     check_controller_state();
-
   }
 
   game_cleanup();
