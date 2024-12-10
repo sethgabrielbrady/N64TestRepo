@@ -27,6 +27,7 @@ float posY = 230.0f;
 float rotBGAngleY = 0.0f;
 float rotBGAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
+bool canJump = true;
 
 
 //Animation frame size defines
@@ -48,7 +49,7 @@ joypad_inputs_t joypad;
 int current_sheet_row_index = 0;
 int walk_start_index = 2;
 int standing_start_index = 0;
-float walk_speed = 0.90;
+float walk_speed = 1.25;
 int frame;
 typedef struct {
     float x;
@@ -247,16 +248,15 @@ void check_controller_state(void) {
         current_sheet_row_index = walk_start_index;
     }
 
-    if (btnHeld.d_right)
+    if (btnHeld.d_right && posX < 320.0f)
     {
-        posX += walk_speed;
-        rotBGAngleY += -0.00095f;
+      posX += walk_speed;
+      rotBGAngleY += -0.00095f;
     }
-    if (btnHeld.d_left)
+    if (btnHeld.d_left && posX > 0.0f)
     {
-        posX -= walk_speed;
-        rotBGAngleY += 0.00095f;
-
+      posX -= walk_speed;
+      rotBGAngleY += 0.00095f;
     }
 
     if (btnReleased.d_right || btnReleased.d_left)
@@ -267,6 +267,19 @@ void check_controller_state(void) {
         current_sheet_row_index = standing_start_index;
     }
 
+
+    // jumping animation
+    if (btnPressed.d_up && canJump){
+      while (posY >= 165.0f){
+        posY -= walk_speed * 0.75f;
+        canJump = false;
+      }
+    } else if (posY < 230.0f && !canJump) {
+      posY += walk_speed * 2.5f;
+      if (posY >= 230.0f ) {
+        canJump = true;
+      }
+    }
 
 }
 
