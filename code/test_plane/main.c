@@ -49,7 +49,7 @@ bool canJump = true;
 int current_sheet_row_index = 0;
 int walk_start_index = 2;
 int standing_start_index = 0;
-float walk_speed = 1.25;
+float walk_speed = 1;
 int frame;
 typedef struct {
     float x;
@@ -271,11 +271,11 @@ void check_controller_state(void) {
     // jumping animation
     if (btnPressed.d_up && canJump){
       while (posY >= 165.0f){
-        posY -= walk_speed * 0.75f;
+        posY -= walk_speed;
         canJump = false;
       }
     } else if (posY < 230.0f && !canJump) {
-      posY += walk_speed * 2.5f;
+      posY += walk_speed * 2.75f;
       if (posY >= 230.0f ) {
         canJump = true;
       }
