@@ -23,7 +23,7 @@ T3DVec3 lightDirVec;
 rspq_syncpoint_t syncPoint;
 sprite_t* fulgore;
 float posX = 60.0f;
-float posY = 230.0f;
+float posY = 240.0f;
 float rotBGAngleY = 0.0f;
 float rotBGAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
@@ -116,7 +116,7 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+  fulgore = sprite_load("rom:/fulgoresheetv1sml.sprite");
 
   modelMap = t3d_model_load("rom:/map.t3dm");
 
@@ -216,6 +216,9 @@ if (rotBGAngleY != rotBGAngleYCopy) {
         .flip_x = fighter.flip
     });
 
+
+
+
   //rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -267,25 +270,22 @@ void check_controller_state(void) {
         current_sheet_row_index = standing_start_index;
     }
 
-
     // jumping animation
     if (btnPressed.d_up && canJump){
-      while (posY >= 165.0f){
-        posY -= walk_speed;
+      while (posY >= 155.0f){
+        posY -= walk_speed * 0.90f;
         canJump = false;
       }
-    } else if (posY < 230.0f && !canJump) {
-      posY += walk_speed * 2.75f;
-      if (posY >= 230.0f ) {
+    } else if (posY < 240.0f && !canJump) {
+      posY += walk_speed * 3;
+      if (posY >= 240.0f ) {
         canJump = true;
       }
     }
-
 }
 
 int main()
 {
-
   game_init();
 
   while(1)
@@ -297,4 +297,3 @@ int main()
   game_cleanup();
   return 0;
 }
-
