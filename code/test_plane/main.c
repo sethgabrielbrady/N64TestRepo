@@ -28,11 +28,14 @@ float rotBGAngleY = 0.0f;
 float rotBGAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
 bool canJump = true;
+int frame_w = 110;
 
 
 //Animation frame size defines
 #define ANIM_FRAME_W 110
 #define ANIM_FRAME_H 140
+#define ANIM_IDLE_W 110
+#define ANIM_JUMP_W 116
 #define ANIM_FRAME_DELAY 4
 // #define ANIM_FRAME_DELAY 30
 
@@ -45,17 +48,23 @@ bool canJump = true;
 #define ANIM_FULG_WALK_FRAME_MAX 15
 #define ANIM_FULG_WALK_ROW_MAX 5
 #define ANIM_FULG_WALK_COL_MAX 5
+//jumping animation frame size defines
+#define ANIM_FULG_JUMP_FRAME_MAX 19
+#define ANIM_FULG_JUMP_ROW_MAX 4
+#define ANIM_FULG_JUMP_COL_MAX 5
 
 int current_sheet_row_index = 0;
 int walk_start_index = 2;
 int standing_start_index = 0;
-float walk_speed = 1;
+int jump_start_index = 0;
+float pos_speed = 1;
 int frame;
 typedef struct {
     float x;
     float y;
-    bool walk_forward;
+    bool walking;
     bool idle;
+    bool jumping;
     bool flip;
     int time;
 
@@ -66,7 +75,7 @@ static fighter_data fighter;
 
 void get_fighter_state (void)
 {
-    if (fighter.walk_forward)
+    if (fighter.walking)
         {
             fighter.idle = false;
             if (current_sheet_row_index == ANIM_FULG_WALK_ROW_MAX)
@@ -76,11 +85,21 @@ void get_fighter_state (void)
         }
     if (fighter.idle)
     {
-         fighter.walk_forward = false;
+         fighter.walking = false;
+         fighter.jumping = false;
          if (current_sheet_row_index == ANIM_FULG_STAND_ROW_MAX)
          {
             current_sheet_row_index = standing_start_index;
          }
+    }
+    if (fighter.jumping)
+    {
+        fighter.idle = false;
+        fighter.walking = false;
+        if (current_sheet_row_index == ANIM_FULG_JUMP_ROW_MAX)
+        {
+          current_sheet_row_index = jump_start_index;
+        }
     }
 }
 
@@ -116,7 +135,8 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  fulgore = sprite_load("rom:/fulgoresheetv1sml.sprite");
+  fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+  // fulgore = sprite_load("rom:/fulgorejump.sprite");
 
   modelMap = t3d_model_load("rom:/map.t3dm");
 
@@ -132,14 +152,30 @@ void game_init(void)
 void update(void)
 {
     fighter.time++; //Increment time
-    if(fighter.walk_forward ) {
-        if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
-            fighter.time = 0;
-            current_sheet_row_index += 1;
+    if(fighter.walking || fighter.jumping)  {
+        fighter.idle = false;
+        if (fighter.walking) {
+          fighter.jumping = false;
+
+          if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
+              fighter.time = 0;
+              current_sheet_row_index += 1;
 
             if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_FRAME_MAX) {
                 fighter.time = 0;
                 current_sheet_row_index = walk_start_index;
+            }
+          }
+        } else if (fighter.jumping) {
+            fighter.walking = false;
+            if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_COL_MAX) {
+                fighter.time = 0;
+                current_sheet_row_index += 1;
+
+              if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX) {
+                  fighter.time = 0;
+                  current_sheet_row_index = standing_start_index;
+              }
             }
         }
     } else {
@@ -206,7 +242,7 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   get_fighter_state();
   frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
   rdpq_sprite_blit(fulgore, posX, posY, &(rdpq_blitparms_t){
-        .s0 = frame*ANIM_FRAME_W, //Extract correct sprite from sheet
+        .s0 = frame*frame_w, //Extract correct sprite from sheet
         .t0 = current_sheet_row_index*ANIM_FRAME_H,
         //Set sprite center to bottom-center
         .cx = ANIM_FRAME_W/2,
@@ -246,42 +282,82 @@ void check_controller_state(void) {
     if (btnPressed.d_right || btnPressed.d_left)
     {
         fighter.time = 0;
-        fighter.walk_forward = true;
+        fighter.walking = true;
+        fighter.jumping = false;
         fighter.idle = false;
         current_sheet_row_index = walk_start_index;
     }
 
     if (btnHeld.d_right && posX < 320.0f)
     {
-      posX += walk_speed;
+      posX += pos_speed;
       rotBGAngleY += -0.00095f;
     }
     if (btnHeld.d_left && posX > 0.0f)
     {
-      posX -= walk_speed;
+      posX -= pos_speed;
       rotBGAngleY += 0.00095f;
     }
 
     if (btnReleased.d_right || btnReleased.d_left)
     {
         fighter.idle = true;
-        fighter.walk_forward = false;
+        fighter.walking = false;
         fighter.time = 0;
         current_sheet_row_index = standing_start_index;
     }
 
     // jumping animation
-    if (btnPressed.d_up && canJump){
-      while (posY >= 155.0f){
-        posY -= walk_speed * 0.90f;
-        canJump = false;
+    if (btnPressed.d_up && !fighter.jumping){
+      fulgore = sprite_load("rom:/fulgorejump.sprite");
+      fighter.time = 0;
+      fighter.jumping = true;
+      fighter.idle = false;
+      fighter.walking = false;
+      frame_w = ANIM_JUMP_W;
+      current_sheet_row_index = jump_start_index;
+      update();
+
+
+      // while posY > 155.0f, then continue the jump animation
+
+      while (posY > 155.0f) {
+        posY -= pos_speed * 0.0001;
       }
-    } else if (posY < 240.0f && !canJump) {
-      posY += walk_speed * 3;
-      if (posY >= 240.0f ) {
-        canJump = true;
+
+
+
+
+
+
+
+      // for forward jump momentum if left or right is pressed
+      // int current_x = posX;
+      // while (posX < current_x + 30) {
+      //   posX += pos_speed;
+      // }
+    }
+    else if (posY < 240.0f && fighter.jumping) {
+      posY += pos_speed * 4;
+      if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
+        frame_w = ANIM_FRAME_W;
+        fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+        fighter.time = 0;
+        fighter.jumping = false;
+        fighter.idle = true;
+        current_sheet_row_index = standing_start_index;
       }
     }
+
+    //after landing, switch back to walking animation
+  //   if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
+  //     frame_w = ANIM_FRAME_W;
+  //     fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+  //     fighter.time = 0;
+  //     fighter.jumping = false;
+  //     fighter.idle = true;
+  //  }
+
 }
 
 int main()
