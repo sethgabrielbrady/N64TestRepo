@@ -2,6 +2,17 @@
 // we may want to use a plane like the font_billboard in snake3d
 // use rdpq_sprite_blit to draw the sprite -- see tiny3d/examples/99_testscene/main.c
 
+
+//https://libdragon.dev/ref/rdpq__sprite_8h.html
+
+// Load multiple sprites in TMEM, with auto-TMEM allocation.
+// rdpq_tex_multi_begin();
+// rdpq_sprite_upload(TILE0, sprite0, NULL);
+// rdpq_sprite_upload(TILE1, sprite1, NULL);
+// rdpq_tex_multi_end();
+
+
+
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
@@ -21,7 +32,11 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rspq_syncpoint_t syncPoint;
-sprite_t* fulgore;
+// sprite_t* fulgore;
+sprite_t* fulgoresheetv1;
+sprite_t* fulgorejump;
+sprite_t* current_spritesheet;
+
 float posX = 60.0f;
 float posY = 240.0f;
 float rotBGAngleY = 0.0f;
@@ -29,14 +44,17 @@ float rotBGAngleYCopy = 0.0f;
 joypad_inputs_t joypad;
 bool canJump = true;
 int frame_w = 110;
+int vel_x = 0;
 
 
+
+#define Vel_Y 2 //Velocity of the sprite in the x direction
 //Animation frame size defines
 #define ANIM_FRAME_W 110
 #define ANIM_FRAME_H 140
 #define ANIM_IDLE_W 110
 #define ANIM_JUMP_W 116
-#define ANIM_FRAME_DELAY 4
+#define ANIM_FRAME_DELAY 3
 // #define ANIM_FRAME_DELAY 30
 
 
@@ -54,6 +72,7 @@ int frame_w = 110;
 #define ANIM_FULG_JUMP_COL_MAX 5
 
 int current_sheet_row_index = 0;
+// sprite_t * current_spritesheet;
 int walk_start_index = 2;
 int standing_start_index = 0;
 int jump_start_index = 0;
@@ -135,8 +154,10 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
-  // fulgore = sprite_load("rom:/fulgorejump.sprite");
+  // fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+  fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");
+  fulgorejump = sprite_load("rom:/fulgorejump.sprite");
+  current_spritesheet = fulgoresheetv1;
 
   modelMap = t3d_model_load("rom:/map.t3dm");
 
@@ -194,6 +215,21 @@ void update(void)
 }
 
 
+void updateFighterBlit(void) {
+  frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
+  rdpq_sprite_blit(current_spritesheet, posX, posY, &(rdpq_blitparms_t){
+        .s0 = frame*frame_w, //Extract correct sprite from sheet
+        .t0 = current_sheet_row_index*ANIM_FRAME_H,
+        //Set sprite center to bottom-center
+        .cx = ANIM_FRAME_W/2,
+        .cy = ANIM_FRAME_H,
+        .width = ANIM_FRAME_W, //Extract correct width from sheet
+        .height = ANIM_FRAME_H,
+        .flip_x = fighter.flip,
+    });
+    rdpq_sync_tile();
+}
+
 void game_loop(float deltaTime)
 {
   uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
@@ -240,23 +276,10 @@ if (rotBGAngleY != rotBGAngleYCopy) {
 
 
   get_fighter_state();
-  frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
-  rdpq_sprite_blit(fulgore, posX, posY, &(rdpq_blitparms_t){
-        .s0 = frame*frame_w, //Extract correct sprite from sheet
-        .t0 = current_sheet_row_index*ANIM_FRAME_H,
-        //Set sprite center to bottom-center
-        .cx = ANIM_FRAME_W/2,
-        .cy = ANIM_FRAME_H,
-        .width = ANIM_FRAME_W, //Extract correct width from sheet
-        .height = ANIM_FRAME_H,
-        .flip_x = fighter.flip
-    });
-
-
-
+  updateFighterBlit();
 
   //rspq_wait();
-  rdpq_sync_tile();
+  // rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
@@ -283,19 +306,20 @@ void check_controller_state(void) {
     {
         fighter.time = 0;
         fighter.walking = true;
-        fighter.jumping = false;
         fighter.idle = false;
         current_sheet_row_index = walk_start_index;
     }
 
     if (btnHeld.d_right && posX < 320.0f)
     {
-      posX += pos_speed;
+      vel_x = pos_speed;
+      posX += vel_x;
       rotBGAngleY += -0.00095f;
     }
     if (btnHeld.d_left && posX > 0.0f)
     {
-      posX -= pos_speed;
+      vel_x = pos_speed;
+      posX -= vel_x;
       rotBGAngleY += 0.00095f;
     }
 
@@ -304,12 +328,14 @@ void check_controller_state(void) {
         fighter.idle = true;
         fighter.walking = false;
         fighter.time = 0;
+        vel_x = 0;
         current_sheet_row_index = standing_start_index;
     }
 
     // jumping animation
     if (btnPressed.d_up && !fighter.jumping){
-      fulgore = sprite_load("rom:/fulgorejump.sprite");
+      // fulgore = sprite_load("rom:/fulgorejump.sprite");
+      current_spritesheet = fulgorejump;
       fighter.time = 0;
       fighter.jumping = true;
       fighter.idle = false;
@@ -319,33 +345,49 @@ void check_controller_state(void) {
       update();
 
 
-      // while posY > 155.0f, then continue the jump animation
 
-      while (posY > 155.0f) {
-        posY -= pos_speed * 0.0001;
+      // for upward jump momentum
+      for (int i = 0; i < 40; i++) {
+        if (posY > 155.0f) {
+          posY -= Vel_Y;
+        }
       }
 
-
-
-
-
-
-
       // for forward jump momentum if left or right is pressed
+      int current_x = posX;
+      if (btnHeld.d_right) {
+        while (posX < current_x + 20) {
+          posX += vel_x;
+        }
+      }
+      else if (btnHeld.d_left) {
+        while (posX > current_x - 20) {
+          posX -= vel_x;
+        }
+      }
       // int current_x = posX;
       // while (posX < current_x + 30) {
       //   posX += pos_speed;
       // }
     }
     else if (posY < 240.0f && fighter.jumping) {
-      posY += pos_speed * 4;
+        posY += Vel_Y*2.5f;
       if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
         frame_w = ANIM_FRAME_W;
-        fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+        // fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
+        current_spritesheet = fulgoresheetv1;
         fighter.time = 0;
         fighter.jumping = false;
+
+        if (vel_x == 0) {
+          fighter.idle = true;
+          current_sheet_row_index = standing_start_index;
+        } else {
+          fighter.walking = true;
+          current_sheet_row_index = walk_start_index;
+        }
         fighter.idle = true;
-        current_sheet_row_index = standing_start_index;
+        // current_sheet_row_index = standing_start_index;
       }
     }
 
