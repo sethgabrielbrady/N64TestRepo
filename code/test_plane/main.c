@@ -46,9 +46,12 @@ bool canJump = true;
 int frame_w = 110;
 int vel_x = 0;
 
+char str[32];
 
 
-#define Vel_Y 2 //Velocity of the sprite in the x direction
+
+
+#define Vel_Y 3.5f //Velocity of the sprite in the x direction
 //Animation frame size defines
 #define ANIM_FRAME_W 110
 #define ANIM_FRAME_H 140
@@ -68,7 +71,7 @@ int vel_x = 0;
 #define ANIM_FULG_WALK_COL_MAX 5
 //jumping animation frame size defines
 #define ANIM_FULG_JUMP_FRAME_MAX 19
-#define ANIM_FULG_JUMP_ROW_MAX 4
+#define ANIM_FULG_JUMP_ROW_MAX 5
 #define ANIM_FULG_JUMP_COL_MAX 5
 
 int current_sheet_row_index = 0;
@@ -78,6 +81,7 @@ int standing_start_index = 0;
 int jump_start_index = 0;
 float pos_speed = 1;
 int frame;
+bool jump_peak = false;
 typedef struct {
     float x;
     float y;
@@ -333,6 +337,35 @@ void check_controller_state(void) {
     }
 
     // jumping animation
+
+
+    if (fighter.jumping && !jump_peak){
+      if (posY > 130.0f) {
+        posY -= Vel_Y*3;
+      } else {
+        jump_peak = true;
+      }
+    } else if (fighter.jumping && jump_peak) {
+      if (posY < 240.0f) {
+        posY += Vel_Y*3;
+      } else if (posY >= 240.0f) {
+        jump_peak = false;
+        fighter.jumping = false;
+        frame_w = ANIM_FRAME_W;
+        current_spritesheet = fulgoresheetv1;
+        fighter.time = 0;
+
+        if (vel_x == 0) {
+          fighter.idle = true;
+          current_sheet_row_index = standing_start_index;
+        } else {
+          fighter.walking = true;
+          current_sheet_row_index = walk_start_index;
+        }
+
+      }
+    }
+
     if (btnPressed.d_up && !fighter.jumping){
       // fulgore = sprite_load("rom:/fulgorejump.sprite");
       current_spritesheet = fulgorejump;
@@ -342,42 +375,43 @@ void check_controller_state(void) {
       fighter.walking = false;
       frame_w = ANIM_JUMP_W;
       current_sheet_row_index = jump_start_index;
-      update();
 
 
 
       // for upward jump momentum
-      for (int i = 0; i < 40; i++) {
-        if (posY > 155.0f) {
-          posY -= Vel_Y;
-        }
-      }
+      // for (int i = 0; i < 80; i++) {
+      //   if (posY > 130.0f) {
+      //     posY -= Vel_Y;
+      //   }
+      // }
+
 
       // for forward jump momentum if left or right is pressed
-      int current_x = posX;
-      if (btnHeld.d_right) {
-        while (posX < current_x + 20) {
-          posX += vel_x;
-        }
-      }
-      else if (btnHeld.d_left) {
-        while (posX > current_x - 20) {
-          posX -= vel_x;
-        }
-      }
+      // int current_x = posX;
+      // if (btnHeld.d_right) {
+      //   while (posX < current_x + 30) {
+      //     posX += vel_x;
+      //   }
+      // }
+      // else if (btnHeld.d_left) {
+      //   while (posX > current_x - 30) {
+      //     posX -= vel_x;
+      //   }
+      // }
       // int current_x = posX;
       // while (posX < current_x + 30) {
       //   posX += pos_speed;
       // }
     }
     else if (posY < 240.0f && fighter.jumping) {
-        posY += Vel_Y*2.5f;
+      // posY += Vel_Y*3;
       if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
         frame_w = ANIM_FRAME_W;
         // fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
         current_spritesheet = fulgoresheetv1;
         fighter.time = 0;
         fighter.jumping = false;
+        jump_peak = false;
 
         if (vel_x == 0) {
           fighter.idle = true;
@@ -386,20 +420,20 @@ void check_controller_state(void) {
           fighter.walking = true;
           current_sheet_row_index = walk_start_index;
         }
-        fighter.idle = true;
-        // current_sheet_row_index = standing_start_index;
       }
     }
 
-    //after landing, switch back to walking animation
-  //   if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
-  //     frame_w = ANIM_FRAME_W;
-  //     fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
-  //     fighter.time = 0;
-  //     fighter.jumping = false;
-  //     fighter.idle = true;
-  //  }
 
+
+}
+
+void show_debug_text(void) {
+    display_context_t disp = 0;
+    while (!(disp = display_get()));
+    // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 255));
+    sprintf( str, "%d", fighter.time);
+    graphics_draw_text(disp, 10, 10, str );
+    display_show(disp);
 }
 
 int main()
@@ -410,6 +444,7 @@ int main()
   {
     game_loop(0.0f);
     check_controller_state();
+    // show_debug_text();
   }
 
   game_cleanup();

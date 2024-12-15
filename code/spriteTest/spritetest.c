@@ -130,7 +130,7 @@ void show_debug_text(void) {
     display_context_t disp = 0;
     while (!(disp = display_get()));
     graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 0));
-    sprintf( str, "%d", current_sheet_row_index);
+    sprintf( str, "%d", frame);
     graphics_draw_text(disp, 10, 10, str );
     display_show(disp);
 }
@@ -184,7 +184,7 @@ int main()
         joypad_poll();
         check_controller_state();
 
-        //show_debug_text();
+        show_debug_text();
     }
 }
 
