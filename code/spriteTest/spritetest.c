@@ -11,23 +11,25 @@
 // start incorporating state machines
 
 //Animation frame size defines
-#define ANIM_FRAME_W 110
-#define ANIM_FRAME_H 140
-#define ANIM_FRAME_DELAY 4
+#define ANIM_FRAME_W 72.33f // standing
+// #define ANIM_FRAME_W 69.33f
+
+#define ANIM_FRAME_H 97
+#define ANIM_FRAME_DELAY 6
 // #define ANIM_FRAME_DELAY 30
 
 
 //standing animation frame size defines
-#define ANIM_FULG_STAND_FRAME_MAX 10
-#define ANIM_FULG_STAND_ROW_MAX 2
-#define ANIM_FULG_STAND_COL_MAX 5
+#define ANIM_FULG_STAND_FRAME_MAX 6
+#define ANIM_FULG_STAND_ROW_MAX 1
+#define ANIM_FULG_STAND_COL_MAX 6
 //walking animation frame size defines
 #define ANIM_FULG_WALK_FRAME_MAX 15
-#define ANIM_FULG_WALK_ROW_MAX 5
-#define ANIM_FULG_WALK_COL_MAX 5
+#define ANIM_FULG_WALK_ROW_MAX 2
+#define ANIM_FULG_WALK_COL_MAX 6
 
 int current_sheet_row_index = 0;
-int walk_start_index = 2;
+int walk_start_index = 1;
 int standing_start_index = 0;
 
 int frame;
@@ -43,6 +45,7 @@ typedef struct {
     int time;
 
 } fighter_data;
+
 
 static fighter_data fighter;
 static sprite_t * fighter_1;
@@ -80,7 +83,7 @@ void render(void)
 
 
     get_fighter_state();
-
+    rdpq_set_mode_copy(true);
     frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
     //Draw fighter sprite
     rdpq_sprite_blit(fighter_1, fighter.x, fighter.y, &(rdpq_blitparms_t){
@@ -89,7 +92,7 @@ void render(void)
         //Set sprite center to bottom-center
         .cx = ANIM_FRAME_W/2,
         .cy = ANIM_FRAME_H,
-        .width = ANIM_FRAME_W, //Extract correct width from sheet
+        .width = 102, //Extract correct width from sheet
         .height = ANIM_FRAME_H
     });
 
@@ -127,10 +130,11 @@ void update(void)
 
 // Draw text on the screen
 void show_debug_text(void) {
+    int mem_size = get_memory_size();
     display_context_t disp = 0;
     while (!(disp = display_get()));
     graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 0));
-    sprintf( str, "%d", frame);
+    sprintf( str, "%d", mem_size);
     graphics_draw_text(disp, 10, 10, str );
     display_show(disp);
 }
@@ -164,7 +168,13 @@ int main()
 
 
     //Init display
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    //display_init((388224, false), DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+    // display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+
+    resolution_t custom_res = {388, 224, false};
+    display_init(custom_res, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
+
+
     //Init DragonFS
     dfs_init(DFS_DEFAULT_LOCATION);
     //Init RDPQ
@@ -172,7 +182,7 @@ int main()
     //Init joypad
     joypad_init();
     //Load Sprite Sheet
-    fighter_1 = sprite_load("rom:/fulgoresheetv1.sprite");
+    fighter_1 = sprite_load("rom:/KenMasters.sprite");
     //Initialize left fulgore
     fighter.x = (display_get_width()/2)-50;
     fighter.y = display_get_height()-15;
@@ -184,7 +194,7 @@ int main()
         joypad_poll();
         check_controller_state();
 
-        show_debug_text();
+        // show_debug_text();
     }
 }
 
