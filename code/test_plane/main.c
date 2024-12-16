@@ -2,14 +2,12 @@
 // we may want to use a plane like the font_billboard in snake3d
 // use rdpq_sprite_blit to draw the sprite -- see tiny3d/examples/99_testscene/main.c
 
+// need to update with state rather than if statements
+
 
 //https://libdragon.dev/ref/rdpq__sprite_8h.html
 
-// Load multiple sprites in TMEM, with auto-TMEM allocation.
-// rdpq_tex_multi_begin();
-// rdpq_sprite_upload(TILE0, sprite0, NULL);
-// rdpq_sprite_upload(TILE1, sprite1, NULL);
-// rdpq_tex_multi_end();
+
 
 
 
@@ -45,13 +43,17 @@ joypad_inputs_t joypad;
 bool canJump = true;
 int frame_w = 110;
 int vel_x = 0;
-
+int vel_y = 0;
+int y_speed = 10.5f;
 char str[32];
+float jump_frame_delay = 3;
+float standing_frame_delay = 3;
+int new_frame = 0;
+int current_x = 0;
 
 
 
 
-#define Vel_Y 3.5f //Velocity of the sprite in the x direction
 //Animation frame size defines
 #define ANIM_FRAME_W 110
 #define ANIM_FRAME_H 140
@@ -70,16 +72,17 @@ char str[32];
 #define ANIM_FULG_WALK_ROW_MAX 5
 #define ANIM_FULG_WALK_COL_MAX 5
 //jumping animation frame size defines
-#define ANIM_FULG_JUMP_FRAME_MAX 19
-#define ANIM_FULG_JUMP_ROW_MAX 5
+#define ANIM_FULG_JUMP_FRAME_MAX 9
+#define ANIM_FULG_JUMP_ROW_MAX 4
 #define ANIM_FULG_JUMP_COL_MAX 5
 
+int testCounter = 0;
 int current_sheet_row_index = 0;
 // sprite_t * current_spritesheet;
 int walk_start_index = 2;
 int standing_start_index = 0;
-int jump_start_index = 0;
-float pos_speed = 1;
+int jump_start_index = 2;
+float pos_speed = 1.25f;
 int frame;
 bool jump_peak = false;
 typedef struct {
@@ -158,9 +161,8 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  // fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
   fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");
-  fulgorejump = sprite_load("rom:/fulgorejump.sprite");
+  fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   current_spritesheet = fulgoresheetv1;
 
   modelMap = t3d_model_load("rom:/map.t3dm");
@@ -174,8 +176,12 @@ void game_init(void)
 
 }
 
+void updateFrame(void) {
+  frame = fighter.time/ANIM_FRAME_DELAY;
+}
 void update(void)
 {
+    updateFrame();
     fighter.time++; //Increment time
     if(fighter.walking || fighter.jumping)  {
         fighter.idle = false;
@@ -199,7 +205,7 @@ void update(void)
 
               if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX) {
                   fighter.time = 0;
-                  current_sheet_row_index = standing_start_index;
+                  current_sheet_row_index = jump_start_index;
               }
             }
         }
@@ -209,18 +215,27 @@ void update(void)
             // go to the next row of the standing animation
             current_sheet_row_index += 1;
             fighter.time = 0;
-        } else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_FRAME_MAX)
+            new_frame = fighter.time/ANIM_FRAME_DELAY;
+        } else if (fighter.time >= ANIM_FRAME_DELAY*(ANIM_FULG_STAND_FRAME_MAX - testCounter))
         {
+            new_frame = ANIM_FULG_STAND_FRAME_MAX - testCounter;
+            testCounter++;
+
             // go back to the start of the standing animation
-            current_sheet_row_index = standing_start_index;
-            fighter.time = 0;
+            if (testCounter == 4){
+              current_sheet_row_index = standing_start_index;
+            } else {
+              current_sheet_row_index = 1;
+            }
+            // current_sheet_row_index = 1;
+            fighter.time = 0 ;
         }
     }
 }
 
 
 void updateFighterBlit(void) {
-  frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
+  // frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
   rdpq_sprite_blit(current_spritesheet, posX, posY, &(rdpq_blitparms_t){
         .s0 = frame*frame_w, //Extract correct sprite from sheet
         .t0 = current_sheet_row_index*ANIM_FRAME_H,
@@ -255,8 +270,6 @@ void game_loop(float deltaTime)
   t3d_light_set_ambient(colorAmbient);
   t3d_light_set_directional(0, colorDir, &lightDirVec);
   t3d_light_set_count(1);
-
-
   rspq_block_run(dplMap);
   syncPoint = rspq_syncpoint_new();
 
@@ -276,19 +289,15 @@ if (rotBGAngleY != rotBGAngleYCopy) {
 
   rotBGAngleYCopy = rotBGAngleY;
 }
-
-
-
   get_fighter_state();
+  updateFrame();
   updateFighterBlit();
-
   //rspq_wait();
   // rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
-      update();
-
+  update();
 }
 
 void game_cleanup(void)
@@ -300,7 +309,6 @@ void game_cleanup(void)
   display_close();
 }
 
-
 void check_controller_state(void) {
     joypad_buttons_t btnPressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     joypad_buttons_t btnHeld = joypad_get_buttons_held(JOYPAD_PORT_1);
@@ -308,10 +316,10 @@ void check_controller_state(void) {
 
     if (btnPressed.d_right || btnPressed.d_left)
     {
-        fighter.time = 0;
-        fighter.walking = true;
-        fighter.idle = false;
-        current_sheet_row_index = walk_start_index;
+      fighter.time = 0;
+      fighter.walking = true;
+      fighter.idle = false;
+      current_sheet_row_index = walk_start_index;
     }
 
     if (btnHeld.d_right && posX < 320.0f)
@@ -327,27 +335,45 @@ void check_controller_state(void) {
       rotBGAngleY += 0.00095f;
     }
 
-    if (btnReleased.d_right || btnReleased.d_left)
+    if ((btnReleased.d_right || btnReleased.d_left) && !fighter.jumping)
     {
-        fighter.idle = true;
-        fighter.walking = false;
-        fighter.time = 0;
-        vel_x = 0;
-        current_sheet_row_index = standing_start_index;
+      fighter.idle = true;
+      fighter.walking = false;
+      fighter.time = 0;
+      vel_x = 0;
+      current_sheet_row_index = standing_start_index;
     }
 
+
+
+
     // jumping animation
-
-
     if (fighter.jumping && !jump_peak){
-      if (posY > 130.0f) {
-        posY -= Vel_Y*3;
-      } else {
-        jump_peak = true;
+
+      if (vel_x == 0) {
+        if (posY > 130.0f) {
+          posY -= y_speed;
+        } else {
+            jump_peak = true;
+        }
       }
+      else if (vel_x != 0) {
+        if (posY > 145.0f) {
+          posY -= y_speed;
+        } else {
+          jump_peak = true;
+        }
+      }
+
+      // else {
+      //   fighter.walking = true;
+      //   current_sheet_row_index = walk_start_index;
+      // }
+
     } else if (fighter.jumping && jump_peak) {
       if (posY < 240.0f) {
-        posY += Vel_Y*3;
+        posY += y_speed;
+
       } else if (posY >= 240.0f) {
         jump_peak = false;
         fighter.jumping = false;
@@ -362,12 +388,27 @@ void check_controller_state(void) {
           fighter.walking = true;
           current_sheet_row_index = walk_start_index;
         }
-
       }
     }
 
+    int current_x = posX;
+    if (fighter.jumping) {
+      if (btnHeld.d_right || btnPressed.d_right) {
+        if (posX < current_x + 160) { // need to factor in the screen width
+          posX += vel_x*3;
+
+        }
+      }
+      else if (btnHeld.d_left || btnPressed.d_left) {
+        if (posX > current_x - 160) {
+          posX -= vel_x*3;
+        }
+      }
+    }
+
+
+
     if (btnPressed.d_up && !fighter.jumping){
-      // fulgore = sprite_load("rom:/fulgorejump.sprite");
       current_spritesheet = fulgorejump;
       fighter.time = 0;
       fighter.jumping = true;
@@ -375,16 +416,6 @@ void check_controller_state(void) {
       fighter.walking = false;
       frame_w = ANIM_JUMP_W;
       current_sheet_row_index = jump_start_index;
-
-
-
-      // for upward jump momentum
-      // for (int i = 0; i < 80; i++) {
-      //   if (posY > 130.0f) {
-      //     posY -= Vel_Y;
-      //   }
-      // }
-
 
       // for forward jump momentum if left or right is pressed
       // int current_x = posX;
@@ -404,10 +435,8 @@ void check_controller_state(void) {
       // }
     }
     else if (posY < 240.0f && fighter.jumping) {
-      // posY += Vel_Y*3;
       if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
         frame_w = ANIM_FRAME_W;
-        // fulgore = sprite_load("rom:/fulgoresheetv1.sprite");
         current_spritesheet = fulgoresheetv1;
         fighter.time = 0;
         fighter.jumping = false;
