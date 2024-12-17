@@ -35,7 +35,7 @@ sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
 
-float posX = 60.0f;
+float posX = 160.0f;
 float posY = 240.0f;
 float rotBGAngleY = 0.0f;
 float rotBGAngleYCopy = 0.0f;
@@ -54,6 +54,9 @@ int new_frame = 0;
 int current_x = 0;
 int max_frame = 0;
 bool show_debug = false;
+int frame_delay = 6;
+int pressCounter = 0;
+
 
 
 
@@ -62,12 +65,14 @@ bool show_debug = false;
 #define ANIM_FRAME_H 140
 #define ANIM_IDLE_W 110
 #define ANIM_JUMP_W 116
-#define ANIM_FRAME_DELAY 10
-// #define ANIM_FRAME_DELAY 30
+
+
+//#define ANIM_FRAME_DELAY 6
+#define ANIM_FRAME_DELAY frame_delay
 
 
 //standing animation frame size defines
-#define ANIM_FULG_STAND_FRAME_MAX 6
+#define ANIM_FULG_STAND_FRAME_MAX 5
 #define ANIM_FULG_STAND_ROW_MAX 2
 #define ANIM_FULG_STAND_COL_MAX 5
 //walking animation frame size defines
@@ -97,6 +102,7 @@ typedef struct {
     bool flip;
     int time;
     bool reverse_frame;
+    bool backing_up;
 
 } fighter_data;
 
@@ -194,11 +200,23 @@ void update(void)
     updateFrame();
     // fighter.time ++;
     if(fighter.walking || fighter.jumping)  {
+
         fighter.idle = false;
         if (fighter.walking) {
           fighter.jumping = false;
 
-          if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
+          // backing up animation
+          if (fighter.backing_up && fighter.time <= 0) {
+
+            if (current_sheet_row_index > 2 && frame == 0){
+              current_sheet_row_index -= 1;
+              fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
+            } else if (current_sheet_row_index == 2) {
+              current_sheet_row_index = 4;
+              fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
+            }
+
+          } else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
               fighter.time = 0;
               current_sheet_row_index += 1;
 
@@ -207,17 +225,21 @@ void update(void)
                 current_sheet_row_index = walk_start_index;
             }
           }
-        } else if (fighter.jumping) {
-            fighter.walking = false;
-            if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_COL_MAX) {
-                fighter.time = 0;
-                current_sheet_row_index += 1;
+        }
+        else if (fighter.jumping)
+        {
+          fighter.walking = false;
+          if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_COL_MAX) {
+              fighter.time = 0;
 
-              if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX) {
-                  fighter.time = 0;
-                  current_sheet_row_index = jump_start_index;
-              }
+              current_sheet_row_index += 1;
+
+            if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX) {
+                fighter.time = 0;
+
+                current_sheet_row_index = jump_start_index;
             }
+          }
         }
     } else {
         fighter.idle = true;
@@ -231,7 +253,10 @@ void update(void)
 
           if(current_sheet_row_index == 0 && frame == 0) {
             fighter.reverse_frame = false;
-            current_sheet_row_index = standing_start_index;
+            //current_sheet_row_index = standing_start_index;
+
+            // fighter.time = ANIM_FRAME_DELAY*2;
+            //frame = 1;
             fighter.time = 0;
           } else {
             current_sheet_row_index -= 1;
@@ -345,10 +370,25 @@ void check_controller_state(void) {
 
     if (btnPressed.d_right || btnPressed.d_left)
     {
-      fighter.time = 0;
+      // fighter.time = 0;
       fighter.walking = true;
       fighter.idle = false;
-      current_sheet_row_index = walk_start_index;
+      // fighter.backing_up = false;
+      if (btnPressed.d_right){
+        fighter.reverse_frame = false;
+        fighter.backing_up = true;
+        fighter.time = 0;
+        current_sheet_row_index = walk_start_index;
+
+      } else if (btnPressed.d_left){
+        //beginning of the backwards walking animation
+        fighter.backing_up = true;
+        fighter.reverse_frame = true;
+        current_sheet_row_index = 4;
+        fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
+      }
+
+      // current_sheet_row_index = walk_start_index;
     }
 
     if (btnHeld.d_right && posX < 320.0f)
@@ -368,7 +408,7 @@ void check_controller_state(void) {
     {
       fighter.idle = true;
       fighter.walking = false;
-      fighter.time = 0;
+      //fighter.time = 0;
       vel_x = 0;
       current_sheet_row_index = standing_start_index;
     }
@@ -438,6 +478,7 @@ void check_controller_state(void) {
 
 
     if (btnPressed.d_up && !fighter.jumping){
+      fighter.reverse_frame = false;
       current_spritesheet = fulgorejump;
       fighter.time = 0;
       fighter.jumping = true;
@@ -481,23 +522,42 @@ void check_controller_state(void) {
       }
     }
 
-    if (btnPressed.b) {
-      show_debug = !show_debug;
+  // for debug
+    if (btnHeld.b) {
+      show_debug = true;
+      frame_delay = 30;
+    } else if (btnReleased.b) {
+      show_debug = false;
+      frame_delay = 6;
     }
 
 }
 
 void debug_text(void) {
-
     display_context_t disp = 0;
     while (!(disp = display_get()));
     // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 255));
-    sprintf( str3, "%d", fighter.time);
-    graphics_draw_text(disp, 10, 0, str3 );
+    sprintf( str3, "%d", frame);
+    graphics_draw_text(disp, 80, 120, str3 );
+    graphics_draw_text(disp, 10, 120, "frame");
     sprintf( str1, "%d", current_sheet_row_index);
-    graphics_draw_text(disp, 10, 10, str1 );
-    sprintf( str2, "%d", max_frame);
-    graphics_draw_text(disp, 10, 20, str2 );
+    graphics_draw_text(disp, 80, 100, str1 );
+    graphics_draw_text(disp, 10, 100, "sprindx");
+    if (fighter.reverse_frame) {
+      graphics_draw_text(disp, 80, 110, "reverse");
+    } else {
+      graphics_draw_text(disp, 80, 110, "forward");
+    }
+    if (fighter.idle) {
+      graphics_draw_text(disp, 10, 110, "idle");
+    } else if (fighter.walking) {
+      graphics_draw_text(disp, 10, 110, "walking");
+    } else if (fighter.jumping) {
+      graphics_draw_text(disp, 10, 110, "jumping");
+    }
+    // sprintf( str2, "%d", pressCounter);
+    // graphics_draw_text(disp, 80, 20, str2 );
+    // graphics_draw_text(disp, 10, 20, "press#" );
     display_show(disp);
 
 }
