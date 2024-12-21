@@ -19,6 +19,11 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <math.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+
+
 
 
 surface_t *depthBuffer;
@@ -34,6 +39,9 @@ rspq_syncpoint_t syncPoint;
 sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
+
+static volatile uint32_t animcounter = 0;
+
 
 float posX = 160.0f;
 float posY = 240.0f;
@@ -56,6 +64,11 @@ int max_frame = 0;
 bool show_debug = false;
 int frame_delay = 6;
 int pressCounter = 0;
+
+//display_context_t disp = 0;
+//surface_t* disp = display_get();
+// display_context_t disp = 0;
+
 
 
 
@@ -109,6 +122,12 @@ typedef struct {
 static fighter_data fighter;
 // static sprite_t * fighter_1;
 
+
+void update_counter( int ovfl )
+{
+    animcounter++;
+}
+
 void get_fighter_state (void)
 {
     if (fighter.walking)
@@ -142,8 +161,8 @@ void get_fighter_state (void)
 void game_init(void)
 {
   fighter.reverse_frame = false;
-  debug_init_isviewer();
-  debug_init_usblog();
+  // debug_init_isviewer();
+  // debug_init_usblog();
   joypad_init();
   joypad = joypad_get_inputs(0);
 
@@ -196,6 +215,13 @@ void updateFrame(void) {
 }
 void update(void)
 {
+  //  surface_t *disp = display_get();
+  //   // rdpq_attach_clear(disp, NULL);
+  //   // surface_t* disp = display_get();
+  //   // // display_context_t disp = 0;
+  //   while (!(disp = display_get()));
+  //   display_show(disp);
+
 
     updateFrame();
     // fighter.time ++;
@@ -285,6 +311,8 @@ void update(void)
           }
         }
     }
+
+
 }
 
 
@@ -305,6 +333,15 @@ void updateFighterBlit(void) {
 
 void game_loop(float deltaTime)
 {
+
+  // surface_t *disp = display_get();
+  //   while (!(disp = display_get()));
+
+  //rdpq_attach_clear(disp, depthBuffer);
+    // surface_t* disp = display_get();
+    // // display_context_t disp = 0;
+  // while (!(disp = display_get()));
+
   uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
   uint8_t colorDir[4]     = {0xAA, 0xAA, 0xAA, 0xFF};
 
@@ -352,6 +389,8 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   rdpq_detach_show();
   joypad_poll();
   update();
+  new_timer(TIMER_TICKS(1000000 / 30), TF_CONTINUOUS, update_counter);
+  //display_show(disp);
 }
 
 void game_cleanup(void)
@@ -533,7 +572,7 @@ void check_controller_state(void) {
 
 }
 
-void debug_text(void) {
+void debug_stuff() {
     display_context_t disp = 0;
     while (!(disp = display_get()));
     // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 255));
@@ -555,6 +594,11 @@ void debug_text(void) {
     } else if (fighter.jumping) {
       graphics_draw_text(disp, 10, 110, "jumping");
     }
+
+    sprintf( str2, "%ld", animcounter);
+
+    graphics_draw_text(disp, 10, 90, "counter" );
+    graphics_draw_text(disp, 80, 90, str2);
     // sprintf( str2, "%d", pressCounter);
     // graphics_draw_text(disp, 80, 20, str2 );
     // graphics_draw_text(disp, 10, 20, "press#" );
@@ -571,7 +615,7 @@ int main()
     game_loop(0.0f);
     check_controller_state();
     if (show_debug) {
-      debug_text();
+      debug_stuff();
     }
   }
 
