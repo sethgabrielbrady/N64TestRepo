@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include "core.h"
+
 
 
 
@@ -42,7 +44,7 @@ sprite_t* current_spritesheet;
 
 static volatile uint32_t animcounter = 0;
 
-
+float frametime = 0.0f;
 float posX = 160.0f;
 float posY = 240.0f;
 float rotBGAngleY = 0.0f;
@@ -160,6 +162,8 @@ void get_fighter_state (void)
 
 void game_init(void)
 {
+  timer_init();
+
   fighter.reverse_frame = false;
   // debug_init_isviewer();
   // debug_init_usblog();
@@ -389,6 +393,7 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   rdpq_detach_show();
   joypad_poll();
   update();
+  // frametime = display_get_delta_time();
   new_timer(TIMER_TICKS(1000000 / 30), TF_CONTINUOUS, update_counter);
   //display_show(disp);
 }
@@ -595,9 +600,9 @@ void debug_stuff() {
       graphics_draw_text(disp, 10, 110, "jumping");
     }
 
-    sprintf( str2, "%ld", animcounter);
+    sprintf( str2, "%f", DELTATIME);
 
-    graphics_draw_text(disp, 10, 90, "counter" );
+    graphics_draw_text(disp, 10, 90, "tickrate" );
     graphics_draw_text(disp, 80, 90, str2);
     // sprintf( str2, "%d", pressCounter);
     // graphics_draw_text(disp, 80, 20, str2 );
@@ -612,7 +617,21 @@ int main()
 
   while(1)
   {
+    float accumulator = 0;
+    const float dt = DELTATIME;
     game_loop(0.0f);
+    frametime = display_get_delta_time();
+
+
+     if (frametime > 0.25f)
+        frametime = 0.25f;
+
+          accumulator += frametime;
+          while (accumulator >= dt)
+          {
+              accumulator -= dt;
+          }
+
     check_controller_state();
     if (show_debug) {
       debug_stuff();
