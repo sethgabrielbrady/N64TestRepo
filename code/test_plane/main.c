@@ -208,13 +208,16 @@ void game_init(void)
 }
 
 void updateFrame(void) {
+// need to set up so that the fighter.anim_frame updates at an interval of fighter.time
+// this way, if needed fighter.time can be sped up or slowed down without affect the frame. Rather
+// the frame would just update quicker
+// anim_frame should not be directly effected by fighter time?
+//
+
 
   if(fighter.reverse_frame) {
-    frame_delay = 6;
     // redo with max frame or count number of times reversed
     fighter.time --;
-    fighter.time --;
-
   } else {
     fighter.time ++;
   }
