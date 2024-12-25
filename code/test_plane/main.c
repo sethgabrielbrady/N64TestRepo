@@ -41,6 +41,13 @@ rspq_syncpoint_t syncPoint;
 sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
+sprite_t* fulgstand1;
+sprite_t* fulgidle;
+sprite_t* background;
+// int disp = 0;
+display_context_t disp;
+
+
 
 
 float frametime = 0.0f;
@@ -112,7 +119,7 @@ typedef struct {
     int time;
     bool reverse_frame;
     bool backing_up;
-    int sheet_index;
+    int spr_ndx;
     int row_max;
     int anim_frame;
 
@@ -128,9 +135,9 @@ void get_fighter_state (void)
         {
             fighter.row_max = ANIM_FULG_WALK_ROW_MAX;
             fighter.idle = false;
-            if (fighter.sheet_index == ANIM_FULG_WALK_ROW_MAX)
+            if (fighter.spr_ndx == ANIM_FULG_WALK_ROW_MAX)
             {
-                fighter.sheet_index = walk_start_index;
+                fighter.spr_ndx = walk_start_index;
             }
         }
     if (fighter.idle)
@@ -138,9 +145,9 @@ void get_fighter_state (void)
          fighter.walking = false;
          fighter.jumping = false;
          fighter.row_max = ANIM_FULG_STAND_ROW_MAX;
-         if (fighter.sheet_index == ANIM_FULG_STAND_ROW_MAX)
+         if (fighter.spr_ndx == ANIM_FULG_STAND_ROW_MAX)
          {
-            fighter.sheet_index = standing_start_index;
+            fighter.spr_ndx = standing_start_index;
          }
     }
     if (fighter.jumping)
@@ -148,19 +155,19 @@ void get_fighter_state (void)
         fighter.idle = false;
         fighter.walking = false;
         fighter.row_max = ANIM_FULG_JUMP_ROW_MAX;
-        if (fighter.sheet_index == ANIM_FULG_JUMP_ROW_MAX)
+        if (fighter.spr_ndx == ANIM_FULG_JUMP_ROW_MAX)
         {
-          fighter.sheet_index = jump_start_index;
+          fighter.spr_ndx = jump_start_index;
         }
     }
 }
 
 void game_init(void)
 {
-  timer_init();
+  // timer_init();
 
   fighter.reverse_frame = false;
-  fighter.sheet_index = 0;
+  fighter.spr_ndx = 0;
   fighter.anim_frame = 0;
   // debug_init_isviewer();
   // debug_init_usblog();
@@ -172,6 +179,7 @@ void game_init(void)
   rdpq_init();
   display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
   depthBuffer = display_get_zbuf();
+  //rdpq_set_mode_copy(true);
 
 
 
@@ -192,18 +200,32 @@ void game_init(void)
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");
+  fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");   // fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
+  fulgstand1 = sprite_load("rom:/fulgstand1.sprite");
+  fulgidle = sprite_load("rom:/fulgidle.sprite");
+  background = sprite_load("rom:/facility.sprite");
+
+
+
   current_spritesheet = fulgoresheetv1;
+
+
+
+
+  // rdp_load_texture( 0, 0, MIRROR_DISABLED, background );
 
   modelMap = t3d_model_load("rom:/map.t3dm");
 
   rspq_block_begin();
     t3d_matrix_push(mapMatFP);
-    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+    //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
     t3d_model_draw(modelMap);
     t3d_matrix_pop(1);
   dplMap = rspq_block_end();
+
+
+
 
 }
 
@@ -237,21 +259,21 @@ void update(void)
           // backing up animation
           if (fighter.backing_up && fighter.time <= 0) {
 
-            if (fighter.sheet_index > 2 && fighter.anim_frame == 0){
-              fighter.sheet_index -= 1;
+            if (fighter.spr_ndx > 2 && fighter.anim_frame == 0){
+              fighter.spr_ndx -= 1;
               fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
-            } else if (fighter.sheet_index == 2) {
-              fighter.sheet_index = 4;
+            } else if (fighter.spr_ndx == 2) {
+              fighter.spr_ndx = 4;
               fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
             }
 
           } else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX) {
               fighter.time = 0;
-              fighter.sheet_index += 1;
+              fighter.spr_ndx += 1;
 
             if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_WALK_FRAME_MAX) {
                 fighter.time = 0;
-                fighter.sheet_index = walk_start_index;
+                fighter.spr_ndx = walk_start_index;
             }
           }
         }
@@ -261,12 +283,12 @@ void update(void)
           if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_COL_MAX) {
               fighter.time = 0;
 
-              fighter.sheet_index += 1;
+              fighter.spr_ndx += 1;
 
             if(fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX) {
                 fighter.time = 0;
 
-                fighter.sheet_index = jump_start_index;
+                fighter.spr_ndx = jump_start_index;
             }
           }
         }
@@ -277,30 +299,30 @@ void update(void)
         }
 
         if (fighter.time <= 0) {
-          if(fighter.sheet_index == 0 && fighter.anim_frame == 0) {
+          if(fighter.spr_ndx == 0 && fighter.anim_frame == 0) {
             fighter.reverse_frame = false;
             fighter.time = 0;
           } else {
-            fighter.sheet_index -= 1;
+            fighter.spr_ndx -= 1;
             fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
           }
         }
-        else if (fighter.sheet_index == 0 && fighter.time <= 0)
+        else if (fighter.spr_ndx == 0 && fighter.time <= 0)
         {
             fighter.reverse_frame = false;
-            fighter.sheet_index  = 0;
+            fighter.spr_ndx  = 0;
             fighter.time = 0;
         }
         else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX )
         {
             // go to the next row of the standing animation
-          if (fighter.sheet_index == 1 && fighter.time >= 1) {
+          if (fighter.spr_ndx == 1 && fighter.time >= 1) {
             fighter.reverse_frame = true;
           }
           else
           {
             fighter.reverse_frame = false;
-            fighter.sheet_index += 1;
+            fighter.spr_ndx += 1;
             fighter.time = 0;
           }
         }
@@ -311,11 +333,9 @@ void update(void)
 
 
 void updateFighterBlit(void) {
-  //fighter.anim_frame = fighter.time/ANIM_FRAME_DELAY; //Calculate fighter frame
   rdpq_sprite_blit(current_spritesheet, posX, posY, &(rdpq_blitparms_t){
-      //.s0 = fighter.frame*frame_w, //Extract correct sprite from sheet
       .s0 = fighter.anim_frame*frame_w, //Extract correct sprite from sheet
-      .t0 = fighter.sheet_index*ANIM_FRAME_H,
+      .t0 = fighter.spr_ndx*ANIM_FRAME_H,
       //Set sprite center to bottom-center
       .cx = ANIM_FRAME_W/2,
       .cy = ANIM_FRAME_H,
@@ -326,25 +346,30 @@ void updateFighterBlit(void) {
   rdpq_sync_tile();
 }
 
+void add_background(void) {
+  rdpq_sprite_blit(background, 160, 120, &(rdpq_blitparms_t){
+      .s0 = 0, //Extract correct sprite from sheet
+      .t0 = 0,
+      //Set sprite center to bottom-center
+      .cx = 160,
+      .cy = 120,
+      .width = 320, //Extract correct width from sheet
+      .height = 110,
+  });
+}
+
 void game_loop(float deltaTime)
 {
 
-  // surface_t *disp = display_get();
-  //   while (!(disp = display_get()));
-
-  //rdpq_attach_clear(disp, depthBuffer);
-    // surface_t* disp = display_get();
-    // // display_context_t disp = 0;
-  // while (!(disp = display_get()));
-
   uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
   uint8_t colorDir[4]     = {0xAA, 0xAA, 0xAA, 0xFF};
-
   t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
   t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
   // ======== Draw (3D) ======== //
+  //rdpq_attach(display_get(), NULL);
+
   rdpq_attach(display_get(), depthBuffer);
   t3d_frame_start();
   t3d_viewport_attach(&viewport);
@@ -361,8 +386,9 @@ void game_loop(float deltaTime)
 
 
   // add sprite
-  // rdpq_set_mode_copy(true);
+  //rdpq_set_mode_copy(true);
   rdpq_set_mode_standard();
+
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
@@ -377,13 +403,20 @@ if (rotBGAngleY != rotBGAngleYCopy) {
 }
   get_fighter_state();
   updateFrame();
+
+
+
+
+  //add_background();
+
   updateFighterBlit();
-  //rspq_wait();
-  // rdpq_sync_tile();
+  rspq_wait();
+  rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
   update();
+
 
 }
 
@@ -411,13 +444,13 @@ void check_controller_state(void) {
         fighter.reverse_frame = false;
         fighter.backing_up = true;
         fighter.time = 0;
-        fighter.sheet_index = walk_start_index;
+        fighter.spr_ndx = walk_start_index;
 
       } else if (btnPressed.d_left){
         //beginning of the backwards walking animation
         fighter.backing_up = true;
         fighter.reverse_frame = true;
-        fighter.sheet_index = 4;
+        fighter.spr_ndx = 4;
         fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
       }
 
@@ -442,7 +475,7 @@ void check_controller_state(void) {
       fighter.walking = false;
       //fighter.time = 0;
       vel_x = 0;
-      fighter.sheet_index = standing_start_index;
+      fighter.spr_ndx = standing_start_index;
     }
 
 
@@ -467,7 +500,7 @@ void check_controller_state(void) {
 
       // else {
       //   fighter.walking = true;
-      //   fighter.sheet_index = walk_start_index;
+      //   fighter.spr_ndx = walk_start_index;
       // }
 
     } else if (fighter.jumping && jump_peak) {
@@ -483,10 +516,10 @@ void check_controller_state(void) {
 
         if (vel_x == 0) {
           fighter.idle = true;
-          fighter.sheet_index = standing_start_index;
+          fighter.spr_ndx = standing_start_index;
         } else {
           fighter.walking = true;
-          fighter.sheet_index = walk_start_index;
+          fighter.spr_ndx = walk_start_index;
         }
       }
     }
@@ -516,7 +549,7 @@ void check_controller_state(void) {
       fighter.idle = false;
       fighter.walking = false;
       frame_w = ANIM_JUMP_W;
-      fighter.sheet_index = jump_start_index;
+      fighter.spr_ndx = jump_start_index;
 
     }
     else if (posY < 240.0f && fighter.jumping) {
@@ -529,10 +562,10 @@ void check_controller_state(void) {
 
         if (vel_x == 0) {
           fighter.idle = true;
-          fighter.sheet_index = standing_start_index;
+          fighter.spr_ndx = standing_start_index;
         } else {
           fighter.walking = true;
-          fighter.sheet_index = walk_start_index;
+          fighter.spr_ndx = walk_start_index;
         }
       }
     }
@@ -540,11 +573,11 @@ void check_controller_state(void) {
   // for debug
     if (btnHeld.b) {
       show_debug = true;
-      frame_delay = 30;
+      //frame_delay = 30;
       frame = fighter.time/6;
     } else if (btnReleased.b) {
       show_debug = false;
-      frame_delay = 6;
+      //frame_delay = 6;
     }
 
 }
@@ -554,11 +587,16 @@ void debug_stuff() {
     while (!(disp = display_get()));
     // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 255));
     sprintf( str3, "%d", frame);
+
+    // graphics_draw_sprite(disp, 0, 0, background);
+    // graphics_draw_sprite_trans(disp, 160, 120, fulgstand1);
+
+
     graphics_draw_text(disp, 80, 120, "frame" );
     graphics_draw_text(disp, 10, 120, str3);
-    sprintf( str1, "%d", fighter.sheet_index);
+    sprintf( str1, "%d", fighter.spr_ndx);
     graphics_draw_text(disp, 80, 100, str1 );
-    graphics_draw_text(disp, 10, 100, "sprindx");
+    graphics_draw_text(disp, 10, 100, "spr_ndx");
     if (fighter.reverse_frame) {
       graphics_draw_text(disp, 80, 110, "reverse");
     } else {
@@ -593,13 +631,16 @@ int main()
 
   while(1)
   {
+
     game_loop(0.0f);
     check_controller_state();
 
     if (show_debug) {
       debug_stuff();
     }
-  }
+
+
+  };
 
 
   game_cleanup();
