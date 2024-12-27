@@ -49,6 +49,8 @@ sprite_t* background;
 // int disp = 0;
 display_context_t disp;
 float bg_x = 260.00;
+float angle_speed = 0.00095f;
+
 
 
 
@@ -219,15 +221,15 @@ void game_init(void)
 
   // rdp_load_texture( 0, 0, MIRROR_DISABLED, background );
 
-  modelMap = t3d_model_load("rom:/bridge.t3dm");
-  modelCube = t3d_model_load("rom:/cube.t3dm");
+  modelMap = t3d_model_load("rom:/bridge3.t3dm");
+  // modelCube = t3d_model_load("rom:/cube.t3dm");
 
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
   //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
 
-  t3d_model_draw(modelCube);
+  // t3d_model_draw(modelCube);
   t3d_model_draw(modelMap);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
@@ -369,8 +371,10 @@ void add_background(void) {
 void game_loop(float deltaTime)
 {
 
-  uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
-  uint8_t colorDir[4]     = {0xAA, 0xAA, 0xAA, 0xFF};
+  //uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
+
+  uint8_t colorAmbient[4] = {0xcc, 0xcc, 0xcc, 0xcc};
+  uint8_t colorDir[4]     = {0x00, 0x00, 0x00, 0x00};
   //t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
 
   t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 160.0f);
@@ -386,7 +390,7 @@ void game_loop(float deltaTime)
   t3d_viewport_attach(&viewport);
 
   // also bg color?
-  t3d_screen_clear_color(RGBA32(00, 00, 102, 0xFF));
+  t3d_screen_clear_color(RGBA32(38, 38, 38, 0xFF));
   // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
   t3d_screen_clear_depth();
   t3d_light_set_ambient(colorAmbient);
@@ -394,8 +398,6 @@ void game_loop(float deltaTime)
   t3d_light_set_count(1);
   rspq_block_run(dplMap);
   syncPoint = rspq_syncpoint_new();
-
-
 
 
   // add sprite
@@ -471,19 +473,32 @@ void check_controller_state(void) {
 
     }
 
-    if (btnHeld.d_right && posX < 320.0f)
+    if (btnHeld.d_right)
     {
-      vel_x = pos_speed;
-      posX += vel_x;
-      rotBGAngleY += 0.00095f;
-      bg_x -= 0.5;
+      if (angle_speed < 0) {
+        angle_speed = angle_speed * -1;
+      }
+      rotBGAngleY += angle_speed;
+      if (posX < 320.0f) {
+        vel_x = pos_speed;
+        posX += vel_x;
+        bg_x -= 0.5;
+      }
     }
-    if (btnHeld.d_left && posX > 0.0f)
+    if (btnHeld.d_left)
     {
-      vel_x = pos_speed;
-      posX -= vel_x;
-      rotBGAngleY += -0.00095f;
-      bg_x += 0.5;
+      if (angle_speed > 0) {
+        angle_speed = angle_speed * -1;
+      }
+
+      rotBGAngleY += angle_speed;
+      if (posX > 0.0f) {
+        vel_x = pos_speed;
+        posX -= vel_x;
+        // rotBGAngleY += -0.00095f;
+        bg_x += 0.5;
+      }
+
     }
 
     if ((btnReleased.d_right || btnReleased.d_left) && !fighter.jumping)
@@ -598,7 +613,9 @@ void check_controller_state(void) {
     }
 
     if (btnHeld.a) {
-      rotBGAngleY += 0.01195f;
+      angle_speed = 0.01195f;
+    } else {
+      angle_speed = 0.00095f;
     }
 
 }
