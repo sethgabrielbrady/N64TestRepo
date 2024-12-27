@@ -32,7 +32,9 @@ surface_t *depthBuffer;
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
 T3DModel *modelMap;
+T3DModel *modelCube;
 rspq_block_t *dplMap;
+
 T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
@@ -46,6 +48,7 @@ sprite_t* fulgidle;
 sprite_t* background;
 // int disp = 0;
 display_context_t disp;
+float bg_x = 260.00;
 
 
 
@@ -197,6 +200,7 @@ void game_init(void)
   camPos = (T3DVec3){{0, 30.0f, 115.0f}};
   camTarget = (T3DVec3){{0, 0, 45}};
 
+
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
@@ -204,7 +208,7 @@ void game_init(void)
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   fulgstand1 = sprite_load("rom:/fulgstand1.sprite");
   fulgidle = sprite_load("rom:/fulgidle.sprite");
-  background = sprite_load("rom:/facility.sprite");
+  background = sprite_load("rom:/facility.ci4.sprite");
 
 
 
@@ -215,13 +219,17 @@ void game_init(void)
 
   // rdp_load_texture( 0, 0, MIRROR_DISABLED, background );
 
-  modelMap = t3d_model_load("rom:/map.t3dm");
+  modelMap = t3d_model_load("rom:/bridge.t3dm");
+  modelCube = t3d_model_load("rom:/cube.t3dm");
+
 
   rspq_block_begin();
-    t3d_matrix_push(mapMatFP);
-    //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-    t3d_model_draw(modelMap);
-    t3d_matrix_pop(1);
+  t3d_matrix_push(mapMatFP);
+  //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+
+  t3d_model_draw(modelCube);
+  t3d_model_draw(modelMap);
+  t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
 
@@ -351,10 +359,10 @@ void add_background(void) {
       .s0 = 0, //Extract correct sprite from sheet
       .t0 = 0,
       //Set sprite center to bottom-center
-      .cx = 160,
-      .cy = 120,
-      .width = 320, //Extract correct width from sheet
-      .height = 110,
+      .cx = bg_x,
+      .cy = 300,
+      .width = 640, //Extract correct width from sheet
+      .height = 320,
   });
 }
 
@@ -363,12 +371,15 @@ void game_loop(float deltaTime)
 
   uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
   uint8_t colorDir[4]     = {0xAA, 0xAA, 0xAA, 0xFF};
-  t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
+  //t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
+
+  t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 160.0f);
+
   t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
-  // ======== Draw (3D) ======== //
-  //rdpq_attach(display_get(), NULL);
+  // // ======== Draw (3D) ======== //
+  // //rdpq_attach(display_get(), NULL);
 
   rdpq_attach(display_get(), depthBuffer);
   t3d_frame_start();
@@ -383,6 +394,8 @@ void game_loop(float deltaTime)
   t3d_light_set_count(1);
   rspq_block_run(dplMap);
   syncPoint = rspq_syncpoint_new();
+
+
 
 
   // add sprite
@@ -409,22 +422,24 @@ if (rotBGAngleY != rotBGAngleYCopy) {
 
   //add_background();
 
+  //rdpq_sync_tile();
   updateFighterBlit();
+
   rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
   update();
-
-
 }
 
 void game_cleanup(void)
 {
   rspq_block_free(dplMap);
   t3d_model_free(modelMap);
+  t3d_model_free(modelCube);
   free_uncached(mapMatFP);
+  sprite_free(current_spritesheet);
   t3d_destroy();
   display_close();
 }
@@ -460,13 +475,15 @@ void check_controller_state(void) {
     {
       vel_x = pos_speed;
       posX += vel_x;
-      rotBGAngleY += -0.00095f;
+      rotBGAngleY += 0.00095f;
+      bg_x -= 0.5;
     }
     if (btnHeld.d_left && posX > 0.0f)
     {
       vel_x = pos_speed;
       posX -= vel_x;
-      rotBGAngleY += 0.00095f;
+      rotBGAngleY += -0.00095f;
+      bg_x += 0.5;
     }
 
     if ((btnReleased.d_right || btnReleased.d_left) && !fighter.jumping)
@@ -578,6 +595,10 @@ void check_controller_state(void) {
     } else if (btnReleased.b) {
       show_debug = false;
       //frame_delay = 6;
+    }
+
+    if (btnHeld.a) {
+      rotBGAngleY += 0.01195f;
     }
 
 }
