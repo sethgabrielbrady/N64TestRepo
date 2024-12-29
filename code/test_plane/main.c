@@ -31,9 +31,12 @@
 surface_t *depthBuffer;
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
+T3DMat4FP* lightMatFP;
+T3DModel *modelLight;
 T3DModel *modelMap;
 T3DModel *modelCube;
 rspq_block_t *dplMap;
+rspq_block_t *dplLight;
 
 T3DVec3 camPos;
 T3DVec3 camTarget;
@@ -50,6 +53,8 @@ sprite_t* background;
 display_context_t disp;
 float bg_x = 260.00;
 float angle_speed = 0.00095f;
+float x_dist = 0.0f;
+float xd_copy = 0.0f;
 
 
 
@@ -133,6 +138,11 @@ typedef struct {
 static fighter_data fighter;
 // static sprite_t * fighter_1;
 
+// typedef struct {
+//   color_t color;
+//   T3DVec3 dir;
+// } DirLight;
+
 
 void get_fighter_state (void)
 {
@@ -193,17 +203,29 @@ void game_init(void)
   viewport = t3d_viewport_create();
 
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
+  lightMatFP = malloc_uncached(sizeof(T3DMat4FP));
+
+
   t3d_mat4fp_from_srt_euler(mapMatFP,
     (float[3]){0.3f, 0.3f, 0.3f},
     (float[3]){0, 0, 0},
     (float[3]){0, 0, -10}
   );
+   t3d_mat4fp_from_srt_euler(lightMatFP,
+    (float[3]){0.3f, 0.3f, 0.3f},
+    (float[3]){0, 0, 0},
+    (float[3]){0, 0, -20}
+  );
 
-  camPos = (T3DVec3){{0, 30.0f, 115.0f}};
+  //camPos = (T3DVec3){{0, 30.0f, 115.0f}}; //facility
+  camPos = (T3DVec3){{0, 20.0f, 115.0f}};
+
   camTarget = (T3DVec3){{0, 0, 45}};
 
 
+  //lightDirVec = (T3DVec3){{1.0f, 1.0f, 0.0f}};
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
+
   t3d_vec3_norm(&lightDirVec);
 
   fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");   // fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
@@ -221,22 +243,30 @@ void game_init(void)
 
   // rdp_load_texture( 0, 0, MIRROR_DISABLED, background );
 
-  modelMap = t3d_model_load("rom:/bridge3.t3dm");
-  // modelCube = t3d_model_load("rom:/cube.t3dm");
+  modelMap = t3d_model_load("rom:/rooftop.t3dm");
+  modelLight = t3d_model_load("rom:/skyline.t3dm");
+
+  // modelCube = t3d_model_load("rom:/skyline.t3dm");
+
 
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
   //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-
   // t3d_model_draw(modelCube);
   t3d_model_draw(modelMap);
+  //t3d_model_draw(modelCube);
+
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
+  rspq_block_begin();
+  t3d_matrix_push(lightMatFP);
 
+  t3d_model_draw(modelLight);
+  t3d_matrix_pop(1);
 
-
+  dplLight = rspq_block_end();
 }
 
 void updateFrame(void) {
@@ -397,6 +427,7 @@ void game_loop(float deltaTime)
   t3d_light_set_directional(0, colorDir, &lightDirVec);
   t3d_light_set_count(1);
   rspq_block_run(dplMap);
+  rspq_block_run(dplLight);
   syncPoint = rspq_syncpoint_new();
 
 
@@ -407,15 +438,18 @@ void game_loop(float deltaTime)
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
-if (rotBGAngleY != rotBGAngleYCopy) {
+
+if (rotBGAngleY != rotBGAngleYCopy || x_dist != xd_copy) {
   t3d_mat4fp_from_srt_euler(mapMatFP,
     (float[3]){0.3f, 0.3f, 0.3f},
     (float[3]){0, rotBGAngleY, 0},
-    (float[3]){0, 0, -10}
+    (float[3]){x_dist, 0, -10}
   );
 
+  xd_copy = x_dist;
   rotBGAngleYCopy = rotBGAngleY;
 }
+
   get_fighter_state();
   updateFrame();
 
@@ -440,6 +474,7 @@ void game_cleanup(void)
   rspq_block_free(dplMap);
   t3d_model_free(modelMap);
   t3d_model_free(modelCube);
+
   free_uncached(mapMatFP);
   sprite_free(current_spritesheet);
   t3d_destroy();
@@ -478,11 +513,15 @@ void check_controller_state(void) {
       if (angle_speed < 0) {
         angle_speed = angle_speed * -1;
       }
-      rotBGAngleY += angle_speed;
+      if (rotBGAngleY < 0) {
+        rotBGAngleY += angle_speed;
+      }
+      x_dist -= 0.15;
       if (posX < 320.0f) {
         vel_x = pos_speed;
         posX += vel_x;
-        bg_x -= 0.5;
+        //bg_x -= 0.5;
+        // x_dist -= 0.05;
       }
     }
     if (btnHeld.d_left)
@@ -490,13 +529,17 @@ void check_controller_state(void) {
       if (angle_speed > 0) {
         angle_speed = angle_speed * -1;
       }
+      if (rotBGAngleY > -0.3f) {
+        rotBGAngleY += angle_speed;
+      }
+      x_dist += 0.15;
 
-      rotBGAngleY += angle_speed;
       if (posX > 0.0f) {
         vel_x = pos_speed;
         posX -= vel_x;
         // rotBGAngleY += -0.00095f;
-        bg_x += 0.5;
+        //bg_x += 0.5;
+        // x_dist += 0.05;
       }
 
     }
@@ -652,10 +695,10 @@ void debug_stuff() {
     graphics_draw_text(disp, 10, 90, str2);
     graphics_draw_text(disp, 80, 90, "anim_frame");
 
-    sprintf( str4, "%d", fighter.time);
+    sprintf( str4, "%f", rotBGAngleY);
 
     graphics_draw_text(disp, 10, 80, str4);
-    graphics_draw_text(disp, 80, 80, "FT");
+    graphics_draw_text(disp, 80, 80, "rotBGAngleY");
     // sprintf( str2, "%d", pressCounter);
     // graphics_draw_text(disp, 80, 20, str2 );
     // graphics_draw_text(disp, 10, 20, "press#" );
