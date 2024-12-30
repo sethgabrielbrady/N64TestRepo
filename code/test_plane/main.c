@@ -25,7 +25,9 @@
 #include "core.h"
 
 
-
+// for light test
+// float rotAngle = 0.0f;
+// float lightCountTimer = 0.5f;
 
 
 surface_t *depthBuffer;
@@ -87,7 +89,7 @@ int frame_delay = 6;
 int pressCounter = 0;
 int counter = 0;
 int seconds = 0; //animation frames update every half second
-
+bool showbackground = false;
 
 //Animation frame size defines
 #define ANIM_FRAME_W 110
@@ -142,6 +144,13 @@ static fighter_data fighter;
 //   color_t color;
 //   T3DVec3 dir;
 // } DirLight;
+
+// DirLight dirLights[4] = {
+//     {.color = {0xFF, 0x00, 0x00, 0xFF}, .dir = {{ 1.0f,  1.0f, 0.0f}}},
+//     {.color = {0x00, 0xFF, 0x00, 0xFF}, .dir = {{-1.0f,  1.0f, 0.0f}}},
+//     {.color = {0x00, 0x00, 0xFF, 0xFF}, .dir = {{ 0.0f, -1.0f, 0.0f}}},
+//     {.color = {0x50, 0x50, 0x50, 0xFF}, .dir = {{ 0.0f,  0.0f, 1.0f}}}
+//   };
 
 
 void get_fighter_state (void)
@@ -203,7 +212,7 @@ void game_init(void)
   viewport = t3d_viewport_create();
 
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
-  lightMatFP = malloc_uncached(sizeof(T3DMat4FP));
+  // lightMatFP = malloc_uncached(sizeof(T3DMat4FP));
 
 
   t3d_mat4fp_from_srt_euler(mapMatFP,
@@ -211,20 +220,22 @@ void game_init(void)
     (float[3]){0, 0, 0},
     (float[3]){0, 0, -10}
   );
-   t3d_mat4fp_from_srt_euler(lightMatFP,
-    (float[3]){0.3f, 0.3f, 0.3f},
-    (float[3]){0, 0, 0},
-    (float[3]){0, 0, -20}
-  );
+  // t3d_mat4fp_from_srt_euler(lightMatFP,
+  //   (float[3]){0.3f, 0.3f, 0.3f},
+  //   (float[3]){0, 0, 0},
+  //   (float[3]){0, 0, -20}
+  // );
+
+
+
 
   //camPos = (T3DVec3){{0, 30.0f, 115.0f}}; //facility
   camPos = (T3DVec3){{0, 20.0f, 115.0f}};
-
   camTarget = (T3DVec3){{0, 0, 45}};
 
 
-  //lightDirVec = (T3DVec3){{1.0f, 1.0f, 0.0f}};
-  lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
+  lightDirVec = (T3DVec3){{1.0f, 1.0f, 0.0f}};
+  //lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
 
   t3d_vec3_norm(&lightDirVec);
 
@@ -232,7 +243,7 @@ void game_init(void)
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   fulgstand1 = sprite_load("rom:/fulgstand1.sprite");
   fulgidle = sprite_load("rom:/fulgidle.sprite");
-  background = sprite_load("rom:/facility.ci4.sprite");
+  background = sprite_load("rom:/facility.sprite");
 
 
 
@@ -243,8 +254,9 @@ void game_init(void)
 
   // rdp_load_texture( 0, 0, MIRROR_DISABLED, background );
 
-  modelMap = t3d_model_load("rom:/rooftop.t3dm");
-  modelLight = t3d_model_load("rom:/skyline.t3dm");
+  modelMap = t3d_model_load("rom:/facility.t3dm");
+  //modelLight = t3d_model_load("rom:/cube.t3dm");
+
 
   // modelCube = t3d_model_load("rom:/skyline.t3dm");
 
@@ -260,13 +272,13 @@ void game_init(void)
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
-  rspq_block_begin();
-  t3d_matrix_push(lightMatFP);
+  // rspq_block_begin();
+  // //t3d_matrix_push(lightMatFP);
 
-  t3d_model_draw(modelLight);
-  t3d_matrix_pop(1);
+  // //t3d_model_draw(modelLight);
+  // //t3d_matrix_pop(1);
 
-  dplLight = rspq_block_end();
+  // dplLight = rspq_block_end();
 }
 
 void updateFrame(void) {
@@ -391,20 +403,21 @@ void add_background(void) {
       .s0 = 0, //Extract correct sprite from sheet
       .t0 = 0,
       //Set sprite center to bottom-center
-      .cx = bg_x,
-      .cy = 300,
-      .width = 640, //Extract correct width from sheet
-      .height = 320,
+      .cx = 160,
+      .cy = 120,
+      .width = 320, //Extract correct width from sheet
+      .height = 240,
   });
 }
+
 
 void game_loop(float deltaTime)
 {
 
   //uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xAA};
-
-  uint8_t colorAmbient[4] = {0xcc, 0xcc, 0xcc, 0xcc};
-  uint8_t colorDir[4]     = {0x00, 0x00, 0x00, 0x00};
+  //uint8_t colorAmbient[4] = {0x00, 0x00, 0x00, 0xff};
+  uint8_t colorAmbient[4] = {0xaa, 0xaa, 0xaa, 0xaa};
+  uint8_t colorDir[4]     = {0xdd, 0xdd, 0xdd, 0xdd};
   //t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
 
   t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 160.0f);
@@ -413,6 +426,8 @@ void game_loop(float deltaTime)
 
 
   // // ======== Draw (3D) ======== //
+
+
   // //rdpq_attach(display_get(), NULL);
 
   rdpq_attach(display_get(), depthBuffer);
@@ -420,33 +435,88 @@ void game_loop(float deltaTime)
   t3d_viewport_attach(&viewport);
 
   // also bg color?
-  t3d_screen_clear_color(RGBA32(38, 38, 38, 0xFF));
+  t3d_screen_clear_color(RGBA32(00, 00, 00, 0xFF));
+  //t3d_screen_clear_color(RGBA32(38, 38, 38, 0xFF));
   // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
+
+    rspq_block_run(dplMap);
+
+  // rotAngle += 0.02f;
+  // lightCountTimer += 0.003f;
+  //  for(int i = 0; i < 4; i++) {
+  //     // rotate light around
+  //     float lightRotSpeed = ((1.0f+i)*0.42f);
+  //     dirLights[i].dir.v[0] = cosf(rotAngle * lightRotSpeed + i * 1.6f);
+  //     dirLights[i].dir.v[1] = sinf(rotAngle * lightRotSpeed + i * 1.6f);
+  //     dirLights[i].dir.v[2] = 0.0f;
+
+  //     if(i % 2 == 0) {
+  //       dirLights[i].dir.v[2] = dirLights[i].dir.v[1];
+  //       dirLights[i].dir.v[1] = 0.0f;
+  //     }
+
+  //     t3d_mat4fp_from_srt_euler(&lightMatFP[i],
+  //       (float[3]){0.02f, 0.02f, 0.02f},
+  //       dirLights[i].dir.v,
+  //       (float[3]){
+  //         dirLights[i].dir.v[0] * 20.0f + i,
+  //         dirLights[i].dir.v[1] * 20.0f + i,
+  //         dirLights[i].dir.v[2] * 20.0f + i
+  //       }
+  //     );
+  //   }
+
+    // // cycle through 0-4 lights over time
+    // int lightCount = fm_sinf(lightCountTimer) * 5.0f;
+    // lightCount = abs(lightCount);
+    // if(lightCount > 4)lightCount = 4;
+
+
   t3d_screen_clear_depth();
   t3d_light_set_ambient(colorAmbient);
   t3d_light_set_directional(0, colorDir, &lightDirVec);
   t3d_light_set_count(1);
-  rspq_block_run(dplMap);
-  rspq_block_run(dplLight);
+  //t3d_light_set_count(lightCount);
+
+
+
+  // t3d_matrix_push_pos(1);
+  //   for(int i = 0; i < lightCount; i++) {
+  //     t3d_light_set_directional(i, &dirLights[i].color.r, &dirLights[i].dir);
+
+  //     t3d_matrix_set(&lightMatFP[i], true);
+
+  //     rdpq_set_prim_color(dirLights[i].color);
+  //     rspq_block_run(dplLight);
+  //   }
+  // t3d_matrix_pop(1);
+
+  // rspq_block_run(dplLight);
   syncPoint = rspq_syncpoint_new();
 
 
   // add sprite
   //rdpq_set_mode_copy(true);
   rdpq_set_mode_standard();
-
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
 
-if (rotBGAngleY != rotBGAngleYCopy || x_dist != xd_copy) {
+//if (rotBGAngleY != rotBGAngleYCopy || x_dist != xd_copy) {
+if (rotBGAngleY != rotBGAngleYCopy) {
   t3d_mat4fp_from_srt_euler(mapMatFP,
     (float[3]){0.3f, 0.3f, 0.3f},
     (float[3]){0, rotBGAngleY, 0},
-    (float[3]){x_dist, 0, -10}
+    (float[3]){0, 0, -10}
   );
 
-  xd_copy = x_dist;
+  // t3d_mat4fp_from_srt_euler(lightMatFP,
+  //   (float[3]){0.3f, 0.3f, 0.3f},
+  //   (float[3]){0, (rotBGAngleY + .0001), 0},
+  //   (float[3]){0, 0, -10}
+  // );
+
+  //xd_copy = x_dist;
   rotBGAngleYCopy = rotBGAngleY;
 }
 
@@ -455,8 +525,9 @@ if (rotBGAngleY != rotBGAngleYCopy || x_dist != xd_copy) {
 
 
 
-
-  //add_background();
+  if (showbackground) {
+    add_background();
+  }
 
   //rdpq_sync_tile();
   updateFighterBlit();
@@ -513,9 +584,7 @@ void check_controller_state(void) {
       if (angle_speed < 0) {
         angle_speed = angle_speed * -1;
       }
-      if (rotBGAngleY < 0) {
-        rotBGAngleY += angle_speed;
-      }
+      rotBGAngleY += angle_speed;
       x_dist -= 0.15;
       if (posX < 320.0f) {
         vel_x = pos_speed;
@@ -529,9 +598,7 @@ void check_controller_state(void) {
       if (angle_speed > 0) {
         angle_speed = angle_speed * -1;
       }
-      if (rotBGAngleY > -0.3f) {
-        rotBGAngleY += angle_speed;
-      }
+      rotBGAngleY += angle_speed;
       x_dist += 0.15;
 
       if (posX > 0.0f) {
@@ -659,6 +726,10 @@ void check_controller_state(void) {
       angle_speed = 0.01195f;
     } else {
       angle_speed = 0.00095f;
+    }
+
+    if (btnPressed.z) {
+      showbackground = !showbackground;
     }
 
 }
