@@ -49,8 +49,9 @@ sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
 sprite_t* fulgstand1;
-sprite_t* fulgidle;
+// sprite_t* fulgidle;
 sprite_t* background;
+rdpq_font_t *fontBillboard;
 // int disp = 0;
 display_context_t disp;
 float bg_x = 260.00;
@@ -114,6 +115,14 @@ bool showbackground = false;
 #define ANIM_FULG_JUMP_ROW_MAX 4
 #define ANIM_FULG_JUMP_COL_MAX 5
 
+
+#define BILLBOARD_YOFFSET   15.0f
+#define FONT_BILLBOARD      2
+
+#define TEXT_COLOR    0x6CBB3CFF
+
+
+
 // sprite_t * current_spritesheet;
 int walk_start_index = 2;
 int standing_start_index = 0;
@@ -121,6 +130,8 @@ int jump_start_index = 2;
 float pos_speed = 1.25f;
 int frame;
 bool jump_peak = false;
+float scale_x = 1.0;
+float scale_y = 1.0;
 typedef struct {
     float x;
     float y;
@@ -204,7 +215,7 @@ void game_init(void)
   display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
   depthBuffer = display_get_zbuf();
   //rdpq_set_mode_copy(true);
-
+ //rdpq_set_mode_standard();
 
 
   t3d_init((T3DInitParams){});
@@ -242,8 +253,13 @@ void game_init(void)
   fulgoresheetv1 = sprite_load("rom:/fulgoresheetv1.sprite");   // fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   fulgstand1 = sprite_load("rom:/fulgstand1.sprite");
-  fulgidle = sprite_load("rom:/fulgidle.sprite");
+  // fulgidle = sprite_load("rom:/fulgidle.sprite");
   background = sprite_load("rom:/facility.sprite");
+  fontBillboard = rdpq_font_load("rom:/squarewave.font64");
+
+  rdpq_text_register_font(FONT_BILLBOARD, fontBillboard);
+  rdpq_font_style(fontBillboard, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
+
 
 
 
@@ -394,6 +410,8 @@ void updateFighterBlit(void) {
       .width = ANIM_FRAME_W, //Extract correct width from sheet
       .height = ANIM_FRAME_H,
       .flip_x = fighter.flip,
+      .scale_x = scale_x,
+      .scale_y = scale_y,
   });
   rdpq_sync_tile();
 }
@@ -409,6 +427,61 @@ void add_background(void) {
       .height = 240,
   });
 }
+
+
+void stats_draw_billboard(void)
+{
+
+  T3DVec3 billboardPos = (T3DVec3){{
+    160,
+    BILLBOARD_YOFFSET,
+    0,
+  }};
+
+  //   T3DVec3 start_positions[] = {
+  //   (T3DVec3){{-100,0.15f,0}},
+  //   (T3DVec3){{0,0.15f,-100}},
+  //   (T3DVec3){{100,0.15f,0}},
+  //   (T3DVec3){{0,0.15f,100}},
+  // };
+
+  T3DVec3 billboardScreenPos;
+  t3d_viewport_calc_viewspace_pos(&viewport, &billboardScreenPos, &billboardPos);
+
+  int x = floorf(billboardScreenPos.v[0]);
+  int y = floorf(billboardScreenPos.v[1]);
+
+  //updateFighterBlit();
+  // rdpq_sprite_blit(shadow, 0, 0, &(rdpq_blitparms_t){
+  // });
+  // rdpq_sprite_blit(fulgstand1, 160, 120, &(rdpq_blitparms_t){
+  //     .s0 = 0, //Extract correct sprite from sheet
+  //     .t0 = 0,
+  //     //Set sprite center to bottom-center
+  //     // .cx = 160,
+  //     // .cy = 120,
+  //     .width = 96,
+  //     .height = 128,
+  // });
+
+  rdpq_sync_pipe(); // Hardware crashes otherwise
+  rdpq_sync_tile(); // Hardware crashes otherwise
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x-5, y-16, "%f", display_get_fps());
+
+
+  //Draw the health bardra
+  // int health = player->health;
+  // int bar_width = 25;  // Full width of the health bar when at max health
+  // float factor = bar_width /  MAX_HEALTH;
+  int width = 40;
+  color_t color = color_from_packed32(TEXT_COLOR);
+
+  rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  rdpq_set_prim_color(color);
+  rdpq_fill_rectangle(x, y, x+width, y+3);
+  rdpq_sync_pipe(); // Hardware crashes otherwise
+}
+
 
 
 void game_loop(float deltaTime)
@@ -439,7 +512,7 @@ void game_loop(float deltaTime)
   //t3d_screen_clear_color(RGBA32(38, 38, 38, 0xFF));
   // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
 
-    rspq_block_run(dplMap);
+  rspq_block_run(dplMap);
 
   // rotAngle += 0.02f;
   // lightCountTimer += 0.003f;
@@ -502,12 +575,14 @@ void game_loop(float deltaTime)
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
 
-//if (rotBGAngleY != rotBGAngleYCopy || x_dist != xd_copy) {
-if (rotBGAngleY != rotBGAngleYCopy) {
+if ( x_dist != xd_copy) {
+//if (rotBGAngleY != rotBGAngleYCopy) {
   t3d_mat4fp_from_srt_euler(mapMatFP,
     (float[3]){0.3f, 0.3f, 0.3f},
-    (float[3]){0, rotBGAngleY, 0},
-    (float[3]){0, 0, -10}
+    // (float[3]){0, rotBGAngleY, 0},
+    (float[3]){0, 0, 0},
+
+    (float[3]){x_dist, 0, -10}
   );
 
   // t3d_mat4fp_from_srt_euler(lightMatFP,
@@ -516,7 +591,7 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   //   (float[3]){0, 0, -10}
   // );
 
-  //xd_copy = x_dist;
+  xd_copy = x_dist;
   rotBGAngleYCopy = rotBGAngleY;
 }
 
@@ -528,9 +603,10 @@ if (rotBGAngleY != rotBGAngleYCopy) {
   if (showbackground) {
     add_background();
   }
-
   //rdpq_sync_tile();
   updateFighterBlit();
+  stats_draw_billboard();
+
 
   rspq_wait();
   rdpq_sync_tile();
@@ -544,10 +620,10 @@ void game_cleanup(void)
 {
   rspq_block_free(dplMap);
   t3d_model_free(modelMap);
-  t3d_model_free(modelCube);
-
+  //t3d_model_free(modelCube);
   free_uncached(mapMatFP);
   sprite_free(current_spritesheet);
+  sprite_free(background);
   t3d_destroy();
   display_close();
 }
@@ -732,7 +808,17 @@ void check_controller_state(void) {
       showbackground = !showbackground;
     }
 
+    if (btnPressed.c_up) {
+      scale_x += .05;
+      scale_y += .05;
+    }
+    if (btnPressed.c_down) {
+      scale_x -= .05;
+      scale_y -= .05;
+    }
 }
+
+
 
 void debug_stuff() {
     display_context_t disp = 0;
@@ -766,10 +852,10 @@ void debug_stuff() {
     graphics_draw_text(disp, 10, 90, str2);
     graphics_draw_text(disp, 80, 90, "anim_frame");
 
-    sprintf( str4, "%f", rotBGAngleY);
+    sprintf( str4, "%f", display_get_fps());
 
     graphics_draw_text(disp, 10, 80, str4);
-    graphics_draw_text(disp, 80, 80, "rotBGAngleY");
+    graphics_draw_text(disp, 80, 80, "fps");
     // sprintf( str2, "%d", pressCounter);
     // graphics_draw_text(disp, 80, 20, str2 );
     // graphics_draw_text(disp, 10, 20, "press#" );
