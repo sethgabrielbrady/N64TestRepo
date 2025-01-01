@@ -29,7 +29,7 @@
 // float rotAngle = 0.0f;
 // float lightCountTimer = 0.5f;
 
-
+float fps;
 surface_t *depthBuffer;
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
@@ -58,6 +58,7 @@ float bg_x = 260.00;
 float angle_speed = 0.00095f;
 float x_dist = 0.0f;
 float xd_copy = 0.0f;
+//T3DMat4FP* modelMatFP;
 
 
 
@@ -280,7 +281,7 @@ void game_init(void)
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+  //rdpq_set_prim_color(RGBA32(255, 255, 255, 122));
   // t3d_model_draw(modelCube);
   t3d_model_draw(modelMap);
   //t3d_model_draw(modelCube);
@@ -428,57 +429,38 @@ void add_background(void) {
   });
 }
 
-
 void stats_draw_billboard(void)
 {
+  int x = 10;
+  int y = 10;
+  int width = 100;
+  int height = 100;
+  int alpha = 64;
 
-  T3DVec3 billboardPos = (T3DVec3){{
-    160,
-    BILLBOARD_YOFFSET,
-    0,
-  }};
-
-  //   T3DVec3 start_positions[] = {
-  //   (T3DVec3){{-100,0.15f,0}},
-  //   (T3DVec3){{0,0.15f,-100}},
-  //   (T3DVec3){{100,0.15f,0}},
-  //   (T3DVec3){{0,0.15f,100}},
-  // };
-
-  T3DVec3 billboardScreenPos;
-  t3d_viewport_calc_viewspace_pos(&viewport, &billboardScreenPos, &billboardPos);
-
-  int x = floorf(billboardScreenPos.v[0]);
-  int y = floorf(billboardScreenPos.v[1]);
-
-  //updateFighterBlit();
-  // rdpq_sprite_blit(shadow, 0, 0, &(rdpq_blitparms_t){
-  // });
-  // rdpq_sprite_blit(fulgstand1, 160, 120, &(rdpq_blitparms_t){
-  //     .s0 = 0, //Extract correct sprite from sheet
-  //     .t0 = 0,
-  //     //Set sprite center to bottom-center
-  //     // .cx = 160,
-  //     // .cy = 120,
-  //     .width = 96,
-  //     .height = 128,
-  // });
-
-  rdpq_sync_pipe(); // Hardware crashes otherwise
-  rdpq_sync_tile(); // Hardware crashes otherwise
-  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x-5, y-16, "%f", display_get_fps());
-
-
-  //Draw the health bardra
-  // int health = player->health;
-  // int bar_width = 25;  // Full width of the health bar when at max health
-  // float factor = bar_width /  MAX_HEALTH;
-  int width = 40;
-  color_t color = color_from_packed32(TEXT_COLOR);
+  rdpq_set_mode_standard();
 
   rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-  rdpq_set_prim_color(color);
-  rdpq_fill_rectangle(x, y, x+width, y+3);
+  rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+  rdpq_set_prim_color(RGBA32(255, 0, 0, alpha));
+  rdpq_fill_rectangle(x, y, width, height);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+15, "FPS %f", fps);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+25, "a frame %d", fighter.anim_frame);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+45, "spr idx %d", fighter.spr_ndx);
+
+  if (fighter.reverse_frame) {
+    rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+45, y+35, "%s", "reverse");
+  } else {
+    rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+45, y+35, "%s", "forward");
+  }
+
+  if (fighter.idle) {
+    rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "%s", "idle");
+  } else if (fighter.walking) {
+    rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "%s", "walking");
+  } else if (fighter.jumping) {
+    rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "%s", "jumping");
+  }
+
   rdpq_sync_pipe(); // Hardware crashes otherwise
 }
 
@@ -494,7 +476,6 @@ void game_loop(float deltaTime)
   //t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
 
   t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 160.0f);
-
   t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
@@ -502,7 +483,6 @@ void game_loop(float deltaTime)
 
 
   // //rdpq_attach(display_get(), NULL);
-
   rdpq_attach(display_get(), depthBuffer);
   t3d_frame_start();
   t3d_viewport_attach(&viewport);
@@ -565,8 +545,8 @@ void game_loop(float deltaTime)
   // t3d_matrix_pop(1);
 
   // rspq_block_run(dplLight);
-  syncPoint = rspq_syncpoint_new();
 
+  syncPoint = rspq_syncpoint_new();
 
   // add sprite
   //rdpq_set_mode_copy(true);
@@ -575,25 +555,26 @@ void game_loop(float deltaTime)
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
 
-if ( x_dist != xd_copy) {
-//if (rotBGAngleY != rotBGAngleYCopy) {
-  t3d_mat4fp_from_srt_euler(mapMatFP,
-    (float[3]){0.3f, 0.3f, 0.3f},
-    // (float[3]){0, rotBGAngleY, 0},
-    (float[3]){0, 0, 0},
+  if ( x_dist != xd_copy) {
+  //if (rotBGAngleY != rotBGAngleYCopy) {
+    t3d_mat4fp_from_srt_euler(mapMatFP,
+      (float[3]){0.3f, 0.3f, 0.3f},
+      // (float[3]){0, rotBGAngleY, 0},
+      (float[3]){0, 0, 0},
 
-    (float[3]){x_dist, 0, -10}
-  );
+      (float[3]){x_dist, 0, -10}
+    );
 
-  // t3d_mat4fp_from_srt_euler(lightMatFP,
-  //   (float[3]){0.3f, 0.3f, 0.3f},
-  //   (float[3]){0, (rotBGAngleY + .0001), 0},
-  //   (float[3]){0, 0, -10}
-  // );
+    // t3d_mat4fp_from_srt_euler(lightMatFP,
+    //   (float[3]){0.3f, 0.3f, 0.3f},
+    //   (float[3]){0, (rotBGAngleY + .0001), 0},
+    //   (float[3]){0, 0, -10}
+    // );
 
-  xd_copy = x_dist;
-  rotBGAngleYCopy = rotBGAngleY;
-}
+    xd_copy = x_dist;
+    rotBGAngleYCopy = rotBGAngleY;
+  }
+
 
   get_fighter_state();
   updateFrame();
@@ -603,9 +584,36 @@ if ( x_dist != xd_copy) {
   if (showbackground) {
     add_background();
   }
-  //rdpq_sync_tile();
+  rdpq_sync_tile();
+  //stats_draw_billboard();
+
   updateFighterBlit();
   stats_draw_billboard();
+
+
+  // Reset to standard rendering mode.
+  //rdpq_set_mode_standard();
+  // Configure the combiner for flat-color rendering
+  // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  // // Configure the flat color
+  // rdpq_set_prim_color(RGBA32(0, 255, 0, 122));
+  // // Draw the triangle
+  // float v1[] = { 100, 100 };
+  // float v2[] = { 200, 200 };
+  // float v3[] = { 100, 200 };
+  // rdpq_triangle(&TRIFMT_ZBUF, v1, v2, v3);
+
+  //Set the render mode to standard, with blending enabled
+  // rdpq_set_mode_standard();
+  // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+  // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+
+  // // Set color to black, and alpha to 25% (64 out of 255)
+  // rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
+
+  // // Draw the rectangle
+  // rdpq_fill_rectangle(10, 10, 30, 30);
+
 
 
   rspq_wait();
@@ -790,12 +798,10 @@ void check_controller_state(void) {
 
   // for debug
     if (btnHeld.b) {
-      show_debug = true;
-      //frame_delay = 30;
+      frame_delay = 30;
       frame = fighter.time/6;
     } else if (btnReleased.b) {
-      show_debug = false;
-      //frame_delay = 6;
+      frame_delay = 6;
     }
 
     if (btnHeld.a) {
@@ -820,48 +826,7 @@ void check_controller_state(void) {
 
 
 
-void debug_stuff() {
-    display_context_t disp = 0;
-    while (!(disp = display_get()));
-    // graphics_fill_screen(disp, graphics_make_color(0, 0, 0, 255));
-    sprintf( str3, "%d", frame);
 
-    // graphics_draw_sprite(disp, 0, 0, background);
-    // graphics_draw_sprite_trans(disp, 160, 120, fulgstand1);
-
-
-    graphics_draw_text(disp, 80, 120, "frame" );
-    graphics_draw_text(disp, 10, 120, str3);
-    sprintf( str1, "%d", fighter.spr_ndx);
-    graphics_draw_text(disp, 80, 100, str1 );
-    graphics_draw_text(disp, 10, 100, "spr_ndx");
-    if (fighter.reverse_frame) {
-      graphics_draw_text(disp, 80, 110, "reverse");
-    } else {
-      graphics_draw_text(disp, 80, 110, "forward");
-    }
-    if (fighter.idle) {
-      graphics_draw_text(disp, 10, 110, "idle");
-    } else if (fighter.walking) {
-      graphics_draw_text(disp, 10, 110, "walking");
-    } else if (fighter.jumping) {
-      graphics_draw_text(disp, 10, 110, "jumping");
-    }
-
-    sprintf( str2, "%d", fighter.anim_frame);
-    graphics_draw_text(disp, 10, 90, str2);
-    graphics_draw_text(disp, 80, 90, "anim_frame");
-
-    sprintf( str4, "%f", display_get_fps());
-
-    graphics_draw_text(disp, 10, 80, str4);
-    graphics_draw_text(disp, 80, 80, "fps");
-    // sprintf( str2, "%d", pressCounter);
-    // graphics_draw_text(disp, 80, 20, str2 );
-    // graphics_draw_text(disp, 10, 20, "press#" );
-    display_show(disp);
-
-}
 
 int main()
 {
@@ -869,15 +834,9 @@ int main()
 
   while(1)
   {
-
     game_loop(0.0f);
     check_controller_state();
-
-    if (show_debug) {
-      debug_stuff();
-    }
-
-
+    fps = display_get_fps();
   };
 
 
