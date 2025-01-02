@@ -7,6 +7,8 @@ extern int frame_delay;
 extern int walk_start_index;
 extern int standing_start_index;
 extern int jump_start_index;
+extern int max_frame;
+
 
 
 //Animation frame size defines
@@ -48,8 +50,12 @@ typedef struct {
 
 } fighter_data;
 
-static fighter_data fighter;
+extern fighter_data fighter;
 
-void get_fighter_state();
+
+// not getting
+void get_fighter_state(fighter_data data);
+void updateFrame(fighter_data data);
+void fighter_state_check(fighter_data data);
 
 #endif // FIGHTER_H
