@@ -53,7 +53,7 @@ typedef struct {
 extern fighter_data fighter;
 
 
-// not getting
+void fighter_init(fighter_data data);
 void get_fighter_state(fighter_data data);
 void updateFrame(fighter_data data);
 void fighter_state_check(fighter_data data);

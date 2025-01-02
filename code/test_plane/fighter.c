@@ -15,6 +15,14 @@ int max_frame = 0;
 
 fighter_data fighter;
 
+
+void fighter_init(fighter_data data)
+{
+    fighter.reverse_frame = false;
+    fighter.spr_ndx = 0;
+    fighter.anim_frame = 0;
+}
+
 void get_fighter_state(fighter_data data)
 {
     if (fighter.walking)
