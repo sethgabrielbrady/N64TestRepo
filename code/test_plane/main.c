@@ -7,7 +7,6 @@
 #include <malloc.h>
 #include <math.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
 
 #include "fighter.h"
@@ -27,6 +26,9 @@ surface_t *depthBuffer;
 rspq_block_t *dplMap;
 rspq_syncpoint_t syncPoint;
 display_context_t disp;
+
+
+
 
 // float fps;
 float xd_copy = 0.0f;
@@ -69,19 +71,19 @@ void game_init(void)
   load_font();
 
   modelMap = t3d_model_load("rom:/facility.t3dm");
-
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
   t3d_model_draw(modelMap);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
+
 }
 
 
 void update(void)
 {
   // update to take in fighter data
-  updateFrame(fighter);
+  update_frame_direction(fighter);
   fighter_state_check(fighter);
 }
 
@@ -120,14 +122,14 @@ void game_loop(float deltaTime)
       (float[3]){0.3f, 0.3f, 0.3f},
       (float[3]){0, 0, 0},
       (float[3]){x_dist, 0, -10}
-    );
+      );
 
     xd_copy = x_dist;
   }
 
 
-  get_fighter_state(fighter);
-  updateFrame(fighter);
+  // get_fighter_animation(fighter);
+  update_frame_direction(fighter);
 
   if (showbackground) {
     add_background();

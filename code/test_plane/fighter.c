@@ -7,10 +7,10 @@
 
 #include "controller.h"
 
-int frame_delay = 6;
+int frame_delay = 4;
 int walk_start_index = 2;
 int standing_start_index = 0;
-int jump_start_index = 2;
+int jump_start_index = 1;
 int max_frame = 0;
 
 fighter_data fighter;
@@ -23,17 +23,17 @@ void fighter_init(fighter_data data)
     fighter.anim_frame = 0;
 }
 
-void get_fighter_state(fighter_data data)
+void get_fighter_animation()
 {
     if (fighter.walking)
+    {
+        fighter.row_max = ANIM_FULG_WALK_ROW_MAX;
+        fighter.idle = false;
+        if (fighter.spr_ndx == ANIM_FULG_WALK_ROW_MAX)
         {
-            fighter.row_max = ANIM_FULG_WALK_ROW_MAX;
-            fighter.idle = false;
-            if (fighter.spr_ndx == ANIM_FULG_WALK_ROW_MAX)
-            {
-                fighter.spr_ndx = walk_start_index;
-            }
+            fighter.spr_ndx = walk_start_index;
         }
+    }
     if (fighter.idle)
     {
          fighter.walking = false;
@@ -56,13 +56,13 @@ void get_fighter_state(fighter_data data)
     }
 }
 
-void updateFrame(fighter_data data) {
+void update_frame_direction(fighter_data data) {
 // need to set up so that the fighter.anim_frame updates at an interval of fighter.time
 // this way, if needed fighter.time can be sped up or slowed down without affect the frame. Rather
 // the frame would just update quicker
 // anim_frame should not be directly effected by fighter time?
 //
-
+  get_fighter_animation();
 
   if(fighter.reverse_frame) {
     // redo with max frame or count number of times reversed
@@ -77,6 +77,7 @@ void updateFrame(fighter_data data) {
 
 void fighter_state_check(fighter_data data)
 {
+
     if(fighter.walking || fighter.jumping)  {
 
         fighter.idle = false;

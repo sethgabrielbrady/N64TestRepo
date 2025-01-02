@@ -54,8 +54,7 @@ extern fighter_data fighter;
 
 
 void fighter_init(fighter_data data);
-void get_fighter_state(fighter_data data);
-void updateFrame(fighter_data data);
+void update_frame_direction(fighter_data data);
 void fighter_state_check(fighter_data data);
 
 #endif // FIGHTER_H
