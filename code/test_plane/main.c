@@ -1,16 +1,3 @@
-
-// we may want to use a plane like the font_billboard in snake3d
-// use rdpq_sprite_blit to draw the sprite -- see tiny3d/examples/99_testscene/main.c
-
-// need to update with state rather than if statements
-
-
-//https://libdragon.dev/ref/rdpq__sprite_8h.html
-
-
-
-
-
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
@@ -22,14 +9,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include "core.h"
+
+#include "fighter.h"
 
 
-// for light test
-// float rotAngle = 0.0f;
-// float lightCountTimer = 0.5f;
-
-float fps;
 surface_t *depthBuffer;
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
@@ -44,7 +27,6 @@ T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 rspq_syncpoint_t syncPoint;
-// sprite_t* fulgore;
 sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
@@ -52,159 +34,48 @@ sprite_t* fulgstand1;
 // sprite_t* fulgidle;
 sprite_t* background;
 rdpq_font_t *fontBillboard;
-// int disp = 0;
 display_context_t disp;
-float bg_x = 260.00;
+joypad_inputs_t joypad;
+
+
+float fps;
 float angle_speed = 0.00095f;
 float x_dist = 0.0f;
 float xd_copy = 0.0f;
-//T3DMat4FP* modelMatFP;
-
-
-
-
-
-float frametime = 0.0f;
-float posX = 160.0f;
-float posY = 240.0f;
 float rotBGAngleY = 0.0f;
 float rotBGAngleYCopy = 0.0f;
-joypad_inputs_t joypad;
+float posX = 160.0f;
+float posY = 240.0f;
 bool canJump = true;
 int frame_w = 110;
 int vel_x = 0;
 int vel_y = 0;
 int y_speed = 10.5f;
-char str1[32];
-char str2[32];
-char str3[32];
-char str4[32];
-float jump_frame_delay = 3;
-float standing_frame_delay = 3;
-int new_frame = 0;
 int current_x = 0;
 int max_frame = 0;
-bool show_debug = false;
-//int frame_delay = 6;
-int frame_delay = 6;
-
-int pressCounter = 0;
-int counter = 0;
-int seconds = 0; //animation frames update every half second
+// int frame_delay = 6;
 bool showbackground = false;
 
-//Animation frame size defines
-#define ANIM_FRAME_W 110
-#define ANIM_FRAME_H 140
-#define ANIM_IDLE_W 110
-#define ANIM_JUMP_W 116
 
-
-//#define ANIM_FRAME_DELAY 6
-#define ANIM_FRAME_DELAY frame_delay
-
-//standing animation frame size defines
-#define ANIM_FULG_STAND_FRAME_MAX 5
-#define ANIM_FULG_STAND_ROW_MAX 2
-#define ANIM_FULG_STAND_COL_MAX 5
-//walking animation frame size defines
-#define ANIM_FULG_WALK_FRAME_MAX 15
-#define ANIM_FULG_WALK_ROW_MAX 5
-#define ANIM_FULG_WALK_COL_MAX 5
-//jumping animation frame size defines
-#define ANIM_FULG_JUMP_FRAME_MAX 9
-#define ANIM_FULG_JUMP_ROW_MAX 4
-#define ANIM_FULG_JUMP_COL_MAX 5
-
-
-#define BILLBOARD_YOFFSET   15.0f
-#define FONT_BILLBOARD      2
-
-#define TEXT_COLOR    0x6CBB3CFF
-
-
-
-// sprite_t * current_spritesheet;
-int walk_start_index = 2;
-int standing_start_index = 0;
-int jump_start_index = 2;
 float pos_speed = 1.25f;
 int frame;
 bool jump_peak = false;
 float scale_x = 1.0;
 float scale_y = 1.0;
-typedef struct {
-    float x;
-    float y;
-    bool walking;
-    bool idle;
-    bool jumping;
-    bool flip;
-    int time;
-    bool reverse_frame;
-    bool backing_up;
-    int spr_ndx;
-    int row_max;
-    int anim_frame;
 
-} fighter_data;
+#define BILLBOARD_YOFFSET   15.0f
+#define FONT_BILLBOARD      2
+#define TEXT_COLOR    0x6CBB3CFF
 
-static fighter_data fighter;
-// static sprite_t * fighter_1;
-
-// typedef struct {
-//   color_t color;
-//   T3DVec3 dir;
-// } DirLight;
-
-// DirLight dirLights[4] = {
-//     {.color = {0xFF, 0x00, 0x00, 0xFF}, .dir = {{ 1.0f,  1.0f, 0.0f}}},
-//     {.color = {0x00, 0xFF, 0x00, 0xFF}, .dir = {{-1.0f,  1.0f, 0.0f}}},
-//     {.color = {0x00, 0x00, 0xFF, 0xFF}, .dir = {{ 0.0f, -1.0f, 0.0f}}},
-//     {.color = {0x50, 0x50, 0x50, 0xFF}, .dir = {{ 0.0f,  0.0f, 1.0f}}}
-//   };
-
-
-void get_fighter_state (void)
-{
-    if (fighter.walking)
-        {
-            fighter.row_max = ANIM_FULG_WALK_ROW_MAX;
-            fighter.idle = false;
-            if (fighter.spr_ndx == ANIM_FULG_WALK_ROW_MAX)
-            {
-                fighter.spr_ndx = walk_start_index;
-            }
-        }
-    if (fighter.idle)
-    {
-         fighter.walking = false;
-         fighter.jumping = false;
-         fighter.row_max = ANIM_FULG_STAND_ROW_MAX;
-         if (fighter.spr_ndx == ANIM_FULG_STAND_ROW_MAX)
-         {
-            fighter.spr_ndx = standing_start_index;
-         }
-    }
-    if (fighter.jumping)
-    {
-        fighter.idle = false;
-        fighter.walking = false;
-        fighter.row_max = ANIM_FULG_JUMP_ROW_MAX;
-        if (fighter.spr_ndx == ANIM_FULG_JUMP_ROW_MAX)
-        {
-          fighter.spr_ndx = jump_start_index;
-        }
-    }
-}
 
 void game_init(void)
 {
-  // timer_init();
 
+  // update this inside fighter.c
   fighter.reverse_frame = false;
   fighter.spr_ndx = 0;
   fighter.anim_frame = 0;
+
   // debug_init_isviewer();
   // debug_init_usblog();
   joypad_init();
@@ -257,7 +128,6 @@ void game_init(void)
   // fulgidle = sprite_load("rom:/fulgidle.sprite");
   background = sprite_load("rom:/facility.sprite");
   fontBillboard = rdpq_font_load("rom:/squarewave.font64");
-
   rdpq_text_register_font(FONT_BILLBOARD, fontBillboard);
   rdpq_font_style(fontBillboard, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
 
@@ -319,6 +189,7 @@ void updateFrame(void) {
 void update(void)
 {
     updateFrame();
+    // update this in fighter.c
     if(fighter.walking || fighter.jumping)  {
 
         fighter.idle = false;
@@ -489,40 +360,8 @@ void game_loop(float deltaTime)
 
   // also bg color?
   t3d_screen_clear_color(RGBA32(00, 00, 00, 0xFF));
-  //t3d_screen_clear_color(RGBA32(38, 38, 38, 0xFF));
-  // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
 
   rspq_block_run(dplMap);
-
-  // rotAngle += 0.02f;
-  // lightCountTimer += 0.003f;
-  //  for(int i = 0; i < 4; i++) {
-  //     // rotate light around
-  //     float lightRotSpeed = ((1.0f+i)*0.42f);
-  //     dirLights[i].dir.v[0] = cosf(rotAngle * lightRotSpeed + i * 1.6f);
-  //     dirLights[i].dir.v[1] = sinf(rotAngle * lightRotSpeed + i * 1.6f);
-  //     dirLights[i].dir.v[2] = 0.0f;
-
-  //     if(i % 2 == 0) {
-  //       dirLights[i].dir.v[2] = dirLights[i].dir.v[1];
-  //       dirLights[i].dir.v[1] = 0.0f;
-  //     }
-
-  //     t3d_mat4fp_from_srt_euler(&lightMatFP[i],
-  //       (float[3]){0.02f, 0.02f, 0.02f},
-  //       dirLights[i].dir.v,
-  //       (float[3]){
-  //         dirLights[i].dir.v[0] * 20.0f + i,
-  //         dirLights[i].dir.v[1] * 20.0f + i,
-  //         dirLights[i].dir.v[2] * 20.0f + i
-  //       }
-  //     );
-  //   }
-
-    // // cycle through 0-4 lights over time
-    // int lightCount = fm_sinf(lightCountTimer) * 5.0f;
-    // lightCount = abs(lightCount);
-    // if(lightCount > 4)lightCount = 4;
 
 
   t3d_screen_clear_depth();
@@ -549,7 +388,6 @@ void game_loop(float deltaTime)
   syncPoint = rspq_syncpoint_new();
 
   // add sprite
-  //rdpq_set_mode_copy(true);
   rdpq_set_mode_standard();
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -589,32 +427,6 @@ void game_loop(float deltaTime)
 
   updateFighterBlit();
   stats_draw_billboard();
-
-
-  // Reset to standard rendering mode.
-  //rdpq_set_mode_standard();
-  // Configure the combiner for flat-color rendering
-  // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-  // // Configure the flat color
-  // rdpq_set_prim_color(RGBA32(0, 255, 0, 122));
-  // // Draw the triangle
-  // float v1[] = { 100, 100 };
-  // float v2[] = { 200, 200 };
-  // float v3[] = { 100, 200 };
-  // rdpq_triangle(&TRIFMT_ZBUF, v1, v2, v3);
-
-  //Set the render mode to standard, with blending enabled
-  // rdpq_set_mode_standard();
-  // rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-  // rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-
-  // // Set color to black, and alpha to 25% (64 out of 255)
-  // rdpq_set_prim_color(RGBA32(255, 0, 0, 64));
-
-  // // Draw the rectangle
-  // rdpq_fill_rectangle(10, 10, 30, 30);
-
-
 
   rspq_wait();
   rdpq_sync_tile();
@@ -724,10 +536,6 @@ void check_controller_state(void) {
         }
       }
 
-      // else {
-      //   fighter.walking = true;
-      //   fighter.spr_ndx = walk_start_index;
-      // }
 
     } else if (fighter.jumping && jump_peak) {
       if (posY < 240.0f) {
