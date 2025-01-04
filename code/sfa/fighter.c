@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "controller.h"
+#include "shared.h"
 
 int frame_delay = 6;
 int walk_start_index = 2;
@@ -130,10 +131,11 @@ void fighter_state_check(fighter_data data)
           if(fighter.spr_ndx == 0 && fighter.anim_frame == 0) {
             fighter.reverse_frame = false;
             fighter.time = 0;
-          } else {
-            fighter.spr_ndx -= 1;
-            fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
           }
+          // } else {
+          //   fighter.spr_ndx -= 1;
+          //   fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
+          // }
         }
         else if (fighter.spr_ndx == 0 && fighter.time <= 0)
         {
