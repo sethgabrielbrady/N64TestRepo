@@ -173,90 +173,64 @@ void update_frame_direction(fighter_data data) {
 
 void fighter_state_machine(fighter_data data)
 {
-    switch (fighter.state) {
-        case STATE_IDLE:
-            if (fighter.time > max_frame) {
-              max_frame = fighter.time;
-            }
+  switch (fighter.state) {
+    case STATE_IDLE:
+      if (fighter.time > max_frame) {
+        max_frame = fighter.time;
+      }
 
-            if (fighter.time <= 0) {
-              if(fighter.spr_ndx == 0 && fighter.anim_frame == 0) {
-                fighter.reverse_frame = false;
-                fighter.time = 0;
-              } else {
-                fighter.spr_ndx -= 1;
-                fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
-              }
-            }
-            else if (fighter.spr_ndx == 0 && fighter.time <= 0)
-            {
-                fighter.reverse_frame = false;
-                fighter.spr_ndx  = 0;
-                fighter.time = 0;
-            }
-            else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX )
-            {
-                // go to the next row of the standing animation
-              if (fighter.spr_ndx == 1 && fighter.time >= 1) {
-                fighter.reverse_frame = true;
-              }
-              else
-              {
-                fighter.reverse_frame = false;
-                fighter.spr_ndx += 1;
-                fighter.time = 0;
-              }
-            }
-            //  if (data.walking) {
-            //     data.state = STATE_WALKING;
-            //     data.idle = false;
-            // } else if (data.jumping) {
-            //     data.state = STATE_JUMPING;
-            //     data.idle = false;
-            // }
-            // break;
+      if (fighter.time <= 0) {
+        if(fighter.spr_ndx == 0 && fighter.anim_frame == 0) {
+          fighter.reverse_frame = false;
+          fighter.time = 0;
+        } else {
+          fighter.spr_ndx -= 1;
+          fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
+        }
+      }
+      else if (fighter.spr_ndx == 0 && fighter.time <= 0)
+      {
+        fighter.reverse_frame = false;
+        fighter.spr_ndx  = 0;
+        fighter.time = 0;
+      }
+      else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX )
+      {
+          // go to the next row of the standing animation
+        if (fighter.spr_ndx == 1 && fighter.time >= 1) {
+          fighter.reverse_frame = true;
+        }
+        else
+        {
+          fighter.reverse_frame = false;
+          fighter.spr_ndx += 1;
+          fighter.time = 0;
+        }
+      }
+    case STATE_WALKING:
+        if (data.backing_up && data.time <= 0) {
+            data.state = STATE_BACKING_UP;
+        } else if (data.time >= ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX) {
+            data.time = 0;
+        }
+        break;
 
+    case STATE_JUMPING:
+        // Handle jumping logic
+        break;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        case STATE_WALKING:
-            if (data.backing_up && data.time <= 0) {
-                data.state = STATE_BACKING_UP;
-            } else if (data.time >= ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX) {
-                data.time = 0;
-            }
-            break;
-
-        case STATE_JUMPING:
-            // Handle jumping logic
-            break;
-
-        case STATE_BACKING_UP:
-            if (data.spr_ndx > 2 && data.anim_frame == 0) {
-                data.spr_ndx -= 1;
-                data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
-            } else if (data.spr_ndx == 2) {
-                data.spr_ndx = 4;
-                data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
-            }
-            if (!data.backing_up) {
-                data.state = STATE_WALKING;
-            }
-            break;
-
+    case STATE_BACKING_UP:
+        if (data.spr_ndx > 2 && data.anim_frame == 0) {
+            data.spr_ndx -= 1;
+            data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
+        } else if (data.spr_ndx == 2) {
+            data.spr_ndx = 4;
+            data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
+        }
+        if (!data.backing_up) {
+            data.state = STATE_WALKING;
+        }
+        break;
         // Add other states as needed
     }
 }
