@@ -26,6 +26,8 @@ surface_t *depthBuffer;
 rspq_block_t *dplMap;
 rspq_syncpoint_t syncPoint;
 display_context_t disp;
+surface_t *fs;
+
 
 
 
@@ -47,6 +49,7 @@ void game_init(void)
   asset_init_compression(2);
   dfs_init(DFS_DEFAULT_LOCATION);
   rdpq_init();
+  //rsp_init();
 
 
   display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, FILTERS_RESAMPLE);
@@ -77,14 +80,20 @@ void game_init(void)
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
+
+
+
+
 }
+
+
 
 
 void update(void)
 {
   // update to take in fighter data
   update_frame_direction(fighter);
-  fighter_state_check(fighter);
+  fighter_state_machine(fighter);
 }
 
 void game_loop(float deltaTime)
@@ -127,6 +136,7 @@ void game_loop(float deltaTime)
 
     xd_copy = x_dist;
   }
+
 
 
   // get_fighter_animation(fighter);

@@ -34,7 +34,17 @@ extern int max_frame;
 #define ANIM_FULG_JUMP_ROW_MAX 4
 #define ANIM_FULG_JUMP_COL_MAX 5
 
+
+typedef enum {
+    STATE_IDLE,
+    STATE_WALKING,
+    STATE_JUMPING,
+    STATE_BACKING_UP,
+    // Add other states as needed
+} fighter_state;
+
 typedef struct {
+    fighter_state state;
     float x;
     float y;
     bool walking;
@@ -55,6 +65,6 @@ extern fighter_data fighter;
 
 void fighter_init(fighter_data data);
 void update_frame_direction(fighter_data data);
-void fighter_state_check(fighter_data data);
+void fighter_state_machine(fighter_data data);
 
 #endif // FIGHTER_H

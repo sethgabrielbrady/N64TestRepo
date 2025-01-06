@@ -17,6 +17,8 @@ sprite_t* current_spritesheet;
 sprite_t* background;
 sprite_t* background2;
 sprite_t* current_background;
+sprite_t* fulgore;
+
 
 
 float cx_val = 160.00;
@@ -26,6 +28,7 @@ void update_cx(void){
 }
 
 void load_sprites(void) {
+  fulgore = sprite_load("rom:/fulgidle.sprite");
   fulgoresheetv1 = sprite_load("rom:/fulgoresheetv2.sprite");
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   background = sprite_load("rom:/fac3.sprite");
@@ -60,24 +63,7 @@ void add_background(void) {
       // .width = 320, //Extract correct width from sheet
       // .height = 240,
       // .scale_x = 1.2,
-
-
   });
   rdpq_sync_tile();
 }
 
-// void update_background(void) {
-//   rdpq_sprite_blit(current_background, 160, 120, &(rdpq_blitparms_t){
-//       // .s0 = 0, //Extract correct sprite from sheet
-//       // .t0 = 0,
-//       //Set sprite center to bottom-center
-//       .cx = 160,
-//       .cy = 120,
-//       // .width = 320, //Extract correct width from sheet
-//       // .height = 240,
-//       // .scale_x = 2,
-//       // .scale_y = 2,
-
-//   });
-//   rdpq_sync_tile();
-// }
