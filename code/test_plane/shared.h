@@ -5,7 +5,7 @@
 
 extern float cx_val;
 extern int frame_w;
-extern int frame ;
+extern int frame;
 extern bool showbackground;
 extern float scale_x;
 extern float scale_y;

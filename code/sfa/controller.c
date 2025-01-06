@@ -11,10 +11,12 @@ float angle_speed = 0.00095f;
 float x_dist = 0.0f;
 float rotBGAngleY = 0.0f;
 float pos_speed = 1.25f;
+float scroll_x = 0.0f;
 
 int vel_x = 0;
-int y_speed = 10.5f;
+int y_speed = 10.9f;
 bool jump_peak = false;
+bool show_stats = false;
 joypad_inputs_t joypad;
 
 
@@ -211,30 +213,29 @@ void check_controller_state(void) {
       frame_delay = 30;
       frame = fighter.time/6;
     } else if (btnReleased.b) {
-      frame_delay = 6;
+      frame_delay = 5;
     }
 
-    if (btnHeld.a) {
-      angle_speed = 0.01195f;
-    } else {
-      angle_speed = 0.00095f;
-    }
+
 
     if (btnPressed.z) {
-      //fix
-      current_background = background2;
-
-     // showbackground = !showbackground;
+      show_stats = !show_stats;
     }
 
 
     //fix
-    if (btnPressed.c_up) {
+    if (btnHeld.c_up) {
       scale_x += .05;
       scale_y += .05;
     }
-    if (btnPressed.c_down) {
+    if (btnHeld.c_down) {
       scale_x -= .05;
       scale_y -= .05;
+    }
+    if (btnHeld.c_right) {
+      scroll_x += 1;
+    }
+     if (btnHeld.c_left) {
+      scroll_x -= 1;
     }
 }

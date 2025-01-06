@@ -13,7 +13,7 @@ float rotBGAngleY = 0.0f;
 float pos_speed = 1.25f;
 
 int vel_x = 0;
-int y_speed = 10.5f;
+int y_speed = 10.9f;
 bool jump_peak = false;
 joypad_inputs_t joypad;
 
@@ -211,7 +211,7 @@ void check_controller_state(void) {
       frame_delay = 30;
       frame = fighter.time/6;
     } else if (btnReleased.b) {
-      frame_delay = 6;
+      frame_delay = 5;
     }
 
     if (btnHeld.a) {

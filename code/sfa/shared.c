@@ -4,22 +4,24 @@
 
 
 
-int frame_w = 110;
+int frame_w = 66;
 int frame = 0;
 bool showbackground = false;
 float scale_x = 1.0;
 float scale_y = 1.0;
 float posX = 72.0f;
-float posY = 240.0f;
+float posY = 234.0f;
 sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
 sprite_t* current_spritesheet;
 sprite_t* background;
 sprite_t* background2;
 sprite_t* current_background;
+sprite_t* fulgore;
 
 
-float cx_val = 160.00;
+
+float cx_val = 379.00;
 
 void update_cx(void){
   current_background = background2;
@@ -28,8 +30,8 @@ void update_cx(void){
 void load_sprites(void) {
   fulgoresheetv1 = sprite_load("rom:/kenidle.sprite");
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
-  // background = sprite_load("rom:/fac3.sprite");
-  // background2 = sprite_load("rom:/fac4.sprite");
+  background = sprite_load("rom:/guysheet.sprite");
+  background2 = sprite_load("rom:/facility.sprite");
   current_spritesheet = fulgoresheetv1;
   current_background = background;
 }
@@ -50,18 +52,50 @@ void updateFighterBlit(void) {
     rdpq_sync_tile();
 }
 
-void add_background(void) {
-  rdpq_sprite_blit(current_background, 160, 120, &(rdpq_blitparms_t){
-      // .s0 = 0, //Extract correct sprite from sheet
-      // .t0 = 0,
+void add_background(float scroll_x) {
+
+  cx_val = scroll_x;
+
+
+  rdpq_sprite_blit(background, 388, 120, &(rdpq_blitparms_t){
+      .s0 = 1, //Extract correct sprite from sheet
+      .t0 = 0,
       //Set sprite center to bottom-center
-      .cx = cx_val,
+      .cx = 379 + (cx_val * 1.07),
       .cy = 120,
-      // .width = 320, //Extract correct width from sheet
-      // .height = 240,
-      // .scale_x = 1.2,
-
-
+      .width = 723, //Extract correct width from sheet
+      .height = 238,
   });
+    rdpq_sync_tile();
+
+   rdpq_sprite_blit(background, 388, 133, &(rdpq_blitparms_t){
+    .s0 = 1, //Extract correct sprite from sheet
+    .t0 = 240,
+    //Set sprite center to bottom-center
+    // .cx = 379 + (cx_val*5),
+    .cx = 379 + (cx_val * 1.15),
+    .cy = 120,
+    .width = 719, //Extract correct width from sheet
+    .height = 226,
+  });
+    rdpq_sync_tile();
+
+
+  rdpq_sprite_blit(background, 388, 120, &(rdpq_blitparms_t){
+      .s0 = 1, //Extract correct sprite from sheet
+      .t0 = 474,
+      //Set sprite center to bottom-center
+      .cx = 379 + (cx_val*1.23),
+      .cy = 120,
+      .width = 769, //Extract correct width from sheet
+      .height = 242,
+  });
+
+
+
+
+
+
   rdpq_sync_tile();
 }
+

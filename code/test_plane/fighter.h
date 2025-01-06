@@ -22,7 +22,7 @@ extern int max_frame;
 #define ANIM_FRAME_DELAY frame_delay
 
 //standing animation frame size defines
-#define ANIM_FULG_STAND_FRAME_MAX 5
+#define ANIM_FULG_STAND_FRAME_MAX 10
 #define ANIM_FULG_STAND_ROW_MAX 2
 #define ANIM_FULG_STAND_COL_MAX 5
 //walking animation frame size defines

@@ -29,9 +29,6 @@ display_context_t disp;
 surface_t *fs;
 
 
-
-
-
 // float fps;
 float xd_copy = 0.0f;
 
@@ -80,13 +77,7 @@ void game_init(void)
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
-
-
-
-
 }
-
-
 
 
 void update(void)
@@ -149,7 +140,7 @@ void game_loop(float deltaTime)
 
   rdpq_sync_tile();
   updateFighterBlit(); // sprite update
-  stats_draw_billboard(fighter);
+  // stats_draw_billboard(fighter);
 
   rspq_wait();
   rdpq_sync_tile();

@@ -14,6 +14,8 @@ extern float posY;
 extern int vel_x;
 extern int y_speed;
 extern bool jump_peak;
+extern bool show_stats;
+extern float scroll_x;
 
 void check_controller_state();
 

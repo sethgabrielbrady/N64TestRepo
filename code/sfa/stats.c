@@ -11,6 +11,7 @@
 
 rdpq_font_t *fontBillboard;
 
+
 void load_font(void)
 {
   fontBillboard = rdpq_font_load("rom:/squarewave.font64");
@@ -27,9 +28,13 @@ void stats_draw_billboard(fighter_data data)
   int alpha = 64;
   float fps = display_get_fps();
 
+
   int ticks = get_ticks_ms();
   int secs = ticks/1000;
   int mem = get_memory_size();
+
+
+
   rdpq_set_mode_standard();
 
   rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
@@ -43,8 +48,8 @@ void stats_draw_billboard(fighter_data data)
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+65, "ticks %d", ticks);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+75, "secs %d", secs);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+85, "mem %d", mem);
-
-
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+95, "ft %d", fighter.time);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+105, "posY %f", posY);
 
 
 
