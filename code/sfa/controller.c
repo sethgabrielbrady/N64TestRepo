@@ -11,7 +11,7 @@ float angle_speed = 0.00095f;
 float x_dist = 0.0f;
 float rotBGAngleY = 0.0f;
 float pos_speed = 1.25f;
-float scroll_x = 0.0f;
+float scroll_x = 1.0f;
 
 int vel_x = 0;
 int y_speed = 10.9f;
@@ -30,6 +30,8 @@ void check_controller_state(void) {
     {
       fighter.walking = true;
       fighter.idle = false;
+      current_spritesheet = kenwalk;
+      current_anim_frame_width = walking_width;
       if (btnPressed.d_right)
       {
         fighter.reverse_frame = false;
@@ -39,10 +41,10 @@ void check_controller_state(void) {
 
       } else if (btnPressed.d_left){
         //beginning of the backwards walking animation
-        fighter.backing_up = true;
-        fighter.reverse_frame = true;
-        fighter.spr_ndx = 4;
-        fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_WALK_COL_MAX;
+        // fighter.backing_up = true;
+        // fighter.reverse_frame = true;
+        fighter.spr_ndx = 0;
+        fighter.time = ANIM_FRAME_DELAY*ANIM_SHEET_WALK_COL_MAX;
       }
 
     }
@@ -127,10 +129,10 @@ void check_controller_state(void) {
 
 
     } else if (fighter.jumping && jump_peak) {
-      if (posY < 240.0f) {
+      if (posY < 218.0f) {
         posY += y_speed;
 
-      } else if (posY >= 240.0f) {
+      } else if (posY >= 218.0f) {
         jump_peak = false;
         fighter.jumping = false;
 
@@ -187,8 +189,8 @@ void check_controller_state(void) {
       fighter.spr_ndx = jump_start_index;
 
     }
-    else if (posY < 240.0f && fighter.jumping) {
-      if (posY >= 240.0f && frame_w == ANIM_JUMP_W) {
+    else if (posY < 218.0f && fighter.jumping) {
+      if (posY >= 218.0f && frame_w == ANIM_JUMP_W) {
 
         //fix
         frame_w = ANIM_FRAME_W;
@@ -233,9 +235,21 @@ void check_controller_state(void) {
       scale_y -= .05;
     }
     if (btnHeld.c_right) {
-      scroll_x += 1;
+      if ( scroll_x < 320) {
+        scroll_x += 1;
+        if (posX <= 360) {
+          posX += pos_speed;
+        }
+
+      }
     }
      if (btnHeld.c_left) {
-      scroll_x -= 1;
+      if (scroll_x >= 1 ) {
+        scroll_x -= 1;
+        if (posX >= 70) {
+          posX -= pos_speed;
+        }
+      }
     }
+
 }

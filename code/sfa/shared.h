@@ -13,6 +13,7 @@ extern float posX;
 extern float posY;
 extern sprite_t* fulgoresheetv1;
 extern sprite_t* fulgorejump;
+extern sprite_t* kenwalk;
 extern sprite_t* current_spritesheet;
 extern sprite_t* background;
 extern sprite_t* background2;

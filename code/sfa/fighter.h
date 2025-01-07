@@ -9,10 +9,16 @@ extern int standing_start_index;
 extern int jump_start_index;
 extern int max_frame;
 
+extern int standing_width;
+extern int standing_height;
+extern int walking_width;
+extern int walking_height;
+
+extern int current_anim_frame_width;
 
 
 //Animation frame size defines
-#define ANIM_FRAME_W 66
+#define ANIM_FRAME_W current_anim_frame_width
 #define ANIM_FRAME_H 98
 #define ANIM_IDLE_W 66
 #define ANIM_JUMP_W 98
@@ -22,17 +28,17 @@ extern int max_frame;
 #define ANIM_FRAME_DELAY frame_delay
 
 //standing animation frame size defines
-#define ANIM_FULG_STAND_FRAME_MAX 6
-#define ANIM_FULG_STAND_ROW_MAX 1
-#define ANIM_FULG_STAND_COL_MAX 6
+#define ANIM_SHEET_STAND_MAX_FRAMES 6
+#define ANIM_SHEET_STAND_ROW_MAX 1
+#define ANIM_SHEET_STAND_COL_MAX 6
 //walking animation frame size defines
-#define ANIM_FULG_WALK_FRAME_MAX 15
-#define ANIM_FULG_WALK_ROW_MAX 5
-#define ANIM_FULG_WALK_COL_MAX 5
+#define ANIM_SHEET_WALK_MAX_FRAMES 6
+#define ANIM_SHEET_WALK_ROW_MAX 1
+#define ANIM_SHEET_WALK_COL_MAX 6
 //jumping animation frame size defines
-#define ANIM_FULG_JUMP_FRAME_MAX 9
-#define ANIM_FULG_JUMP_ROW_MAX 4
-#define ANIM_FULG_JUMP_COL_MAX 5
+#define ANIM_SHEET_JUMP_MAX_FRAMES 9
+#define ANIM_SHEET_JUMP_ROW_MAX 4
+#define ANIM_SHEET_JUMP_COL_MAX 5
 
 
 typedef enum {

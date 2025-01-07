@@ -10,9 +10,10 @@ bool showbackground = false;
 float scale_x = 1.0;
 float scale_y = 1.0;
 float posX = 72.0f;
-float posY = 234.0f;
+float posY = 218.0f;
 sprite_t* fulgoresheetv1;
 sprite_t* fulgorejump;
+sprite_t* kenwalk;
 sprite_t* current_spritesheet;
 sprite_t* background;
 sprite_t* background2;
@@ -29,6 +30,7 @@ void update_cx(void){
 
 void load_sprites(void) {
   fulgoresheetv1 = sprite_load("rom:/kenidle.sprite");
+  kenwalk = sprite_load("rom:/kenwalk.sprite");
   fulgorejump = sprite_load("rom:/fulgorejumpv2.sprite");
   background = sprite_load("rom:/guysheet.sprite");
   background2 = sprite_load("rom:/facility.sprite");
@@ -53,7 +55,7 @@ void updateFighterBlit(void) {
 }
 
 void add_background(float scroll_x) {
-
+  // Needs rewrite
   cx_val = scroll_x;
 
 
@@ -90,11 +92,6 @@ void add_background(float scroll_x) {
       .width = 769, //Extract correct width from sheet
       .height = 242,
   });
-
-
-
-
-
 
   rdpq_sync_tile();
 }

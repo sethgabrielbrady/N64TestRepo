@@ -24,7 +24,7 @@ void stats_draw_billboard(fighter_data data)
   int x = 10;
   int y = 10;
   int width = 100;
-  int height = 100;
+  int height = 130;
   int alpha = 64;
   float fps = display_get_fps();
 
@@ -50,6 +50,8 @@ void stats_draw_billboard(fighter_data data)
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+85, "mem %d", mem);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+95, "ft %d", fighter.time);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+105, "posY %f", posY);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+115, "scroll_x %f", scroll_x);
+
 
 
 

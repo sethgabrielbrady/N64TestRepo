@@ -8,10 +8,16 @@
 #include "controller.h"
 
 float frame_delay = 7;
-int walk_start_index = 2;
+int walk_start_index = 0;
 int standing_start_index = 0;
 int jump_start_index = 1;
 int max_frame = 0;
+
+int standing_width = 66;
+int standing_height = 98;
+int walking_width = 69;
+int walking_height = 98;
+int current_anim_frame_width = 66;
 
 fighter_data fighter;
 
@@ -55,8 +61,8 @@ void fighter_state_machine(fighter_data data)
     case STATE_IDLE:
       // fighter.walking = false;
       // fighter.jumping = false;
-      // fighter.row_max = ANIM_FULG_STAND_ROW_MAX;
-      // if (fighter.spr_ndx == ANIM_FULG_STAND_ROW_MAX)
+      // fighter.row_max = ANIM_SHEET_STAND_ROW_MAX;
+      // if (fighter.spr_ndx == ANIM_SHEET_STAND_ROW_MAX)
       // {
       //   fighter.spr_ndx = standing_start_index;
       // }
@@ -77,7 +83,7 @@ void fighter_state_machine(fighter_data data)
         {
           // fighter.spr_ndx -= 1;
           fighter.spr_ndx  = 0;
-          fighter.time = ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX;
+          fighter.time = ANIM_FRAME_DELAY*ANIM_SHEET_STAND_COL_MAX;
         }
       }
       else if (fighter.spr_ndx == 0 && fighter.time <= 0)
@@ -86,7 +92,7 @@ void fighter_state_machine(fighter_data data)
         fighter.spr_ndx  = 0;
         fighter.time = 0;
       }
-      else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_STAND_COL_MAX )
+      else if (fighter.time >= ANIM_FRAME_DELAY*ANIM_SHEET_STAND_COL_MAX )
       {
           // go to the next row of the standing animation
         if (fighter.spr_ndx == 0 && fighter.time >= 1)
@@ -102,9 +108,9 @@ void fighter_state_machine(fighter_data data)
         }
       }
     case STATE_WALKING:
-        fighter.row_max = ANIM_FULG_WALK_ROW_MAX;
+        fighter.row_max = ANIM_SHEET_WALK_ROW_MAX;
         fighter.idle = false;
-        if (fighter.spr_ndx == ANIM_FULG_WALK_ROW_MAX)
+        if (fighter.spr_ndx == ANIM_SHEET_WALK_ROW_MAX)
         {
             fighter.spr_ndx = walk_start_index;
         }
@@ -113,7 +119,7 @@ void fighter_state_machine(fighter_data data)
         if (data.backing_up && data.time <= 0) {
             data.state = STATE_BACKING_UP;
         }
-        else if (data.time >= ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX)
+        else if (data.time >= ANIM_FRAME_DELAY * ANIM_SHEET_WALK_COL_MAX)
         {
           data.time = 0;
         }
@@ -123,19 +129,19 @@ void fighter_state_machine(fighter_data data)
         // Handle jumping logic
         fighter.idle = false;
         fighter.walking = false;
-        fighter.row_max = ANIM_FULG_JUMP_ROW_MAX;
-        // if (fighter.spr_ndx == ANIM_FULG_JUMP_ROW_MAX)
+        fighter.row_max = ANIM_SHEET_JUMP_ROW_MAX;
+        // if (fighter.spr_ndx == ANIM_SHEET_JUMP_ROW_MAX)
         // {
         //   fighter.spr_ndx = jump_start_index;
         // }
 
           fighter.walking = false;
-          if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_COL_MAX)
+          if (fighter.time >= ANIM_FRAME_DELAY*ANIM_SHEET_JUMP_COL_MAX)
           {
             fighter.time = 0;
             fighter.spr_ndx += 1;
 
-            if (fighter.time >= ANIM_FRAME_DELAY*ANIM_FULG_JUMP_FRAME_MAX)
+            if (fighter.time >= ANIM_FRAME_DELAY*ANIM_SHEET_JUMP_MAX_FRAMES)
             {
               fighter.time = 0;
               fighter.spr_ndx = jump_start_index;
@@ -147,12 +153,12 @@ void fighter_state_machine(fighter_data data)
         if (data.spr_ndx > 2 && data.anim_frame == 0)
         {
           data.spr_ndx -= 1;
-          data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
+          data.time = ANIM_FRAME_DELAY * ANIM_SHEET_WALK_COL_MAX;
         }
         else if (data.spr_ndx == 2)
         {
           data.spr_ndx = 4;
-          data.time = ANIM_FRAME_DELAY * ANIM_FULG_WALK_COL_MAX;
+          data.time = ANIM_FRAME_DELAY * ANIM_SHEET_WALK_COL_MAX;
         }
         if (!data.backing_up)
         {
