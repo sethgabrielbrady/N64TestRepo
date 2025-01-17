@@ -70,7 +70,7 @@ void game_init(void)
   load_sprites();
   load_font();
 
-  modelMap = t3d_model_load("rom:/facility3.t3dm");
+  modelMap = t3d_model_load("rom:/samus2.t3dm");
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
   t3d_model_draw(modelMap);
@@ -139,7 +139,7 @@ void game_loop(float deltaTime)
   // }
 
   rdpq_sync_tile();
-  updateFighterBlit(); // sprite update
+  // updateFighterBlit(); // sprite update
   // stats_draw_billboard(fighter);
 
   rspq_wait();
