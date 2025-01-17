@@ -1,5 +1,3 @@
-#include "fighter.h"
-
 
 #ifndef STATS_H
 #define STATS_H
@@ -12,7 +10,7 @@ extern rdpq_font_t *fontBillboard;
 
 
 void load_font(void);
-void stats_draw_billboard(fighter_data data);
+void stats_draw_billboard();
 
 
 #endif

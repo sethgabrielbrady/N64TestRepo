@@ -9,15 +9,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "fighter.h"
 #include "controller.h"
-#include "shared.h"
 #include "stats.h"
 
 
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
-T3DModel *modelMap;
+// T3DModel *modelMap;
+// T3DMat4 modelMap; // matrix for our model, this is a "normal" float matrix
+T3DModel *model;
 T3DVec3 camPos;
 T3DVec3 camTarget;
 T3DVec3 lightDirVec;
@@ -29,16 +29,11 @@ display_context_t disp;
 surface_t *fs;
 
 
-// float fps;
-float xd_copy = 0.0f;
-
 void game_init(void)
 {
   // initialize various components
   debug_init_isviewer();
   debug_init_usblog();
-
-  fighter_init(fighter);
 
   joypad_init();
   joypad = joypad_get_inputs(0);
@@ -54,26 +49,28 @@ void game_init(void)
   depthBuffer = display_get_zbuf();
   t3d_init((T3DInitParams){});
   viewport = t3d_viewport_create();
-  camPos = (T3DVec3){{0, 20.0f, 115.0f}};
-  camTarget = (T3DVec3){{0, 0, 45}};
+  camPos = (T3DVec3){{-4.0f, 14.0f, 130.0f}};
+  camTarget = (T3DVec3){{0, 0, 0}};
+
+
+
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 0.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  //This is where I should seperate out the T3d?
+  T3DMat4 modelMap;
+  t3d_mat4_identity(&modelMap);
+
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
-  t3d_mat4fp_from_srt_euler(mapMatFP,
-    (float[3]){0.3f, 0.3f, 0.3f},
-    (float[3]){0, 0, 0},
-    (float[3]){0, 0, -10}
-  );
 
-  load_sprites();
+
   load_font();
+  T3DModel *model = t3d_model_load("rom:/samus2.t3dm");
 
-  modelMap = t3d_model_load("rom:/samus2.t3dm");
+  // modelMap = t3d_model_load("rom:/samus2.t3dm");
+
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  t3d_model_draw(modelMap);
+  t3d_model_draw(model);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
@@ -83,8 +80,7 @@ void game_init(void)
 void update(void)
 {
   // update to take in fighter data
-  update_frame_direction(fighter);
-  fighter_state_machine(fighter);
+
 }
 
 void game_loop(float deltaTime)
@@ -96,9 +92,9 @@ void game_loop(float deltaTime)
   t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
+
   // // ======== Draw (3D) ======== //
   rdpq_attach(display_get(), depthBuffer);
-  //rdpq_attach(display_get(), NULL);
   t3d_frame_start();
   t3d_viewport_attach(&viewport);
   t3d_screen_clear_color(RGBA32(00, 00, 00, 0xFF));
@@ -118,30 +114,20 @@ void game_loop(float deltaTime)
   rdpq_mode_combiner(RDPQ_COMBINER_TEX);
   rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
 
-  if ( x_dist != xd_copy) {
-    t3d_mat4fp_from_srt_euler(mapMatFP,
+
+  t3d_mat4fp_from_srt_euler(mapMatFP,
       (float[3]){0.3f, 0.3f, 0.3f},
-      (float[3]){0, 0, 0},
-      (float[3]){x_dist, 0, -10}
-      );
-
-    xd_copy = x_dist;
-  }
-
+      (float[3]){rotBGAngleY, 0, rotBGAngleX},
+      (float[3]){x_dist, y_dist, 0 }
+      // (float[3]){x_dist, y_dist, -10}
+    );
+  // t3d_mat4_to_fixed(mapMatFP, modelMap);
 
 
-  // get_fighter_animation(fighter);
-  update_frame_direction(fighter);
-  //add_background();
 
-  // if (showbackground) {
-  //   add_background();
-  // }
 
   rdpq_sync_tile();
-  // updateFighterBlit(); // sprite update
-  // stats_draw_billboard(fighter);
-
+  //stats_draw_billboard(fighter);
   rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
@@ -153,10 +139,8 @@ void game_loop(float deltaTime)
 void game_cleanup(void)
 {
   rspq_block_free(dplMap);
-  t3d_model_free(modelMap);
+  t3d_model_free(model);
   free_uncached(mapMatFP);
-  sprite_free(current_spritesheet);
-  sprite_free(background);
   t3d_destroy();
   display_close();
 }
