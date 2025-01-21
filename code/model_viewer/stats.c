@@ -7,6 +7,8 @@
 #include "controller.h"
 
 rdpq_font_t *fontBillboard;
+bool show_menu = false;
+
 
 void load_font(void)
 {
