@@ -1,6 +1,6 @@
 
-#ifndef STATS_H
-#define STATS_H
+#ifndef MENU_H
+#define MENU_H
 
 extern rdpq_font_t *fontBillboard;
 extern bool show_menu;

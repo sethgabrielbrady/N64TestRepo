@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #include "controller.h"
-#include "stats.h"
+#include "menu.h"
 
 
 T3DViewport viewport;

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include "stats.h"
+#include "menu.h"
 #include "controller.h"
 
 rdpq_font_t *fontBillboard;

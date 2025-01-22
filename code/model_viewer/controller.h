@@ -2,7 +2,7 @@
 #define CONTROLLER_H
 
 #include <libdragon.h>
-#include "stats.h"
+#include "menu.h"
 
 extern joypad_inputs_t joypad;
 extern float x_dist;
