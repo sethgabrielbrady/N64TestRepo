@@ -16,8 +16,8 @@
 
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
-T3DModel *modelMap;
-T3DModel *modelMap2;
+// T3DModel *modelMap;
+// T3DModel *modelMap2;
 
 
 // T3DMat4 modelMap; // matrix for our model, this is a "normal" float matrix
@@ -31,6 +31,9 @@ rspq_syncpoint_t syncPoint;
 display_context_t disp;
 surface_t *fs;
 
+int current_model = 0;
+int selection = 0;
+
 bool last_model = false;
 
 void game_init(void)
@@ -38,6 +41,7 @@ void game_init(void)
   // initialize various components
   debug_init_isviewer();
   debug_init_usblog();
+  selection = selection_counter;
 
   joypad_init();
   joypad = joypad_get_inputs(0);
@@ -65,12 +69,16 @@ void game_init(void)
 
   load_font();
   load_models();
-  modelMap = t3d_model_load("rom:/samus3.t3dm");
-  modelMap2 = t3d_model_load("rom:/samus5.t3dm");
+  // modelMap = t3d_model_load("rom:/samus3.t3dm");
+  // modelMap2 = t3d_model_load("rom:/samus5.t3dm");
+  // modelMap = modelMaps[0];
+
+
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  t3d_model_draw(modelMap);
+  // i might need to free all models here
+  t3d_model_draw(modelMaps[current_model]);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
@@ -80,25 +88,17 @@ void update() {
 
 }
 
-void update_model(void)
+void update_model(int current_model)
 {
-
   free_uncached(mapMatFP);
-
-  if (modelMap != modelMap2) {
-    modelMap = modelMap2;
-  } else {
-    modelMap = t3d_model_load("rom:/samus3.t3dm");
-
-  }
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  t3d_model_draw(modelMap);
+  t3d_model_draw(modelMaps[current_model]);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
-  rdpq_sync_tile();
 
+  rdpq_sync_tile();
 }
 
 void game_loop(float deltaTime)
@@ -151,9 +151,10 @@ void game_loop(float deltaTime)
 
   if (show_menu) {
     stats_draw_billboard();
-    if (last_model != change_model) {
-      update_model();
-      last_model = change_model;
+    if (current_model != selection_counter - 1) {
+      selection = selection_counter - 1;
+      current_model = selection;
+      update_model(current_model);
     }
   }
   rspq_wait();
@@ -167,7 +168,8 @@ void game_loop(float deltaTime)
 void game_cleanup(void)
 {
   rspq_block_free(dplMap);
-  t3d_model_free(modelMap);
+  //I should to free all models
+  t3d_model_free(modelMaps[current_model]);
   free_uncached(mapMatFP);
   t3d_destroy();
   display_close();

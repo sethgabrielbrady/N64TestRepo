@@ -54,6 +54,8 @@ void stats_draw_billboard()
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+25, "ticks %d", ticks);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "secs %d", secs);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+45, "mem %d", mem);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+55, "sel %d", selection_counter);
+
 
 
 
