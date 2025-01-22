@@ -2,7 +2,8 @@
 
 #include <malloc.h>
 #include <libdragon.h>
-
+#include "menu.h"
+#include "models.h"
 
 
 float x_dist = 0.0f;
@@ -15,6 +16,7 @@ bool change_model = false;
 joypad_inputs_t joypad;
 
 void check_controller_state(void) {
+
     joypad_buttons_t btnPressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     joypad_buttons_t btnHeld = joypad_get_buttons_held(JOYPAD_PORT_1);
     // joypad_buttons_t btnReleased = joypad_get_buttons_released(JOYPAD_PORT_1);
@@ -26,6 +28,14 @@ void check_controller_state(void) {
     if (show_menu) {
       if (btnPressed.z) {
         change_model = !change_model;
+      }
+
+      if (btnPressed.d_down && not_at_menu_end) {
+        selector_start_pos += 10;
+      }
+
+       if (btnPressed.d_up && (selector_start_pos != menu_center_y)) {
+        selector_start_pos -= 10;
       }
     }
 

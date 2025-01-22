@@ -8,7 +8,7 @@ N64_CFLAGS += -std=gnu2x
 
 #https://github.com/N64brew-Game-Jam-2023/alien-sun/blob/main/Makefile
 
-src = main.c controller.c menu.c
+src = main.c controller.c menu.c models.c
 
 assets_png = $(wildcard assets/*.png)
 assets_gltf = $(wildcard assets/*.glb)

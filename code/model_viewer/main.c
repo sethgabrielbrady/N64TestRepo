@@ -11,6 +11,7 @@
 
 #include "controller.h"
 #include "menu.h"
+#include "models.h"
 
 
 T3DViewport viewport;
@@ -31,8 +32,6 @@ display_context_t disp;
 surface_t *fs;
 
 bool last_model = false;
-
-
 
 void game_init(void)
 {
@@ -55,11 +54,8 @@ void game_init(void)
   t3d_init((T3DInitParams){});
   viewport = t3d_viewport_create();
   // camPos = (T3DVec3){{-4.0f, 10.0f, 30.0f}};
- camPos = (T3DVec3){{0,10.0f,40.0f}};
-
+  camPos = (T3DVec3){{0,10.0f,40.0f}};
   camTarget = (T3DVec3){{0, 0, 0}};
-
-
 
   lightDirVec = (T3DVec3){{1.0f, 1.0f, 0.0f}};
   t3d_vec3_norm(&lightDirVec);
@@ -68,7 +64,7 @@ void game_init(void)
 
 
   load_font();
-
+  load_models();
   modelMap = t3d_model_load("rom:/samus3.t3dm");
   modelMap2 = t3d_model_load("rom:/samus5.t3dm");
 
