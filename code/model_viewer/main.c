@@ -34,6 +34,7 @@ surface_t *fs;
 
 int current_model = 0;
 int selection = 0;
+float lastTime = 0.0;
 
 bool last_model = false;
 
@@ -72,7 +73,9 @@ void game_init(void)
   load_model();
   modell.skel = t3d_skeleton_create(model);
   modell.skelBlend = t3d_skeleton_clone(&modell.skel, false); // optimized for blending, has no matrices
-  modell.animWalk = t3d_anim_create(model, "walk");
+  modell.animWalk = t3d_anim_create(model, "Snake_Walk");
+  t3d_anim_attach(&animWalk, &skelBlend);
+  // set up the anim
   t3d_anim_set_looping(&modell.animWalk, true); // loop this animation
   t3d_anim_set_playing(&modell.animWalk, true); // start in a paused state
   t3d_anim_attach(&modell.animWalk, &modell.skelBlend);
@@ -85,25 +88,26 @@ void game_init(void)
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  // i might need to free all models here
-
   t3d_model_draw(modelMaps[current_model]);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
 }
 
-void update(float deltaTime) {
-    float currSpeed = 0.84f;
-    float animBlend = 0.84 / 0.51f;
+void update() {
+  float newTime = get_time_s();
+  deltaTime = newTime - lastTime;
+  lastTime = newTime;
+  // float currSpeed = 0.84f;
+  float animBlend = 0.84 / 0.51f;
 
-    if(animBlend > 1.0f)animBlend = 1.0f;
+  if(animBlend > 1.0f)animBlend = 1.0f;
 
   if (current_model >= 5) {
-    t3d_skeleton_update(&modell.skel);
     t3d_anim_update(&modell.animWalk, deltaTime);
     t3d_anim_set_speed(&modell.animWalk, animBlend + 0.15f);
     t3d_skeleton_blend(&modell.skel, &modell.skel, &modell.skelBlend, animBlend);
+    t3d_skeleton_update(&modell.skel);
   }
 }
 
@@ -178,10 +182,11 @@ void game_loop(float deltaTime)
     if (current_model != selection_counter - 1) {
       selection = selection_counter - 1;
       current_model = selection;
-      update_model(current_model);
-      if (current_model >= 6){
+      if (current_model == 6){
         t3d_anim_set_playing(&modell.animWalk, true);
       }
+      update_model(current_model);
+
     }
   }
 
@@ -190,7 +195,7 @@ void game_loop(float deltaTime)
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
-  update(deltaTime);
+  update();
 }
 
 void game_cleanup(void)
@@ -205,13 +210,11 @@ void game_cleanup(void)
 
 int main()
 {
+  lastTime = get_time_s() - (1.0f / 60.0f);
+
   game_init();
   while(1)
   {
-    float lastTime = get_time_s() - (1.0f / 60.0f);
-    float newTime = get_time_s();
-    float deltaTime = newTime - lastTime;
-    lastTime = newTime;
     game_loop(deltaTime);
     check_controller_state();
   };

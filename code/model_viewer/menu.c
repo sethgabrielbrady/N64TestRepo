@@ -20,6 +20,8 @@ int selector_start_pos = 110;
 int menu_center_y = 110;
 int selection_counter = 0;
 bool not_at_menu_end = true;
+float deltaTime = 0.0f;
+
 
 
 float get_time_s() {
@@ -43,9 +45,6 @@ void stats_draw_billboard()
   float fps = display_get_fps();
   float time = get_time_s();
 
-
-
-
   rdpq_set_mode_standard();
 
   rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
@@ -62,7 +61,6 @@ void stats_draw_billboard()
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "secs %d", secs);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+45, "mem %d", mem);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+55, "sel %d", selection_counter);
-
 
 
 

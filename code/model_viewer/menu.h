@@ -8,6 +8,7 @@ extern int selector_start_pos;
 extern int menu_center_y;
 extern int selection_counter;
 extern bool not_at_menu_end;
+extern float deltaTime;
 
 
 

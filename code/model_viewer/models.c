@@ -18,7 +18,7 @@ model_data modell;
 
 void load_model(void) {
 
-  model = t3d_model_load("rom:/samus_anim.t3dm");
+  model = t3d_model_load("rom:/snakeOG.t3dm");
   modell.animBlend = 0.0f;
 }
 
