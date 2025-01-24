@@ -11,12 +11,14 @@ extern bool not_at_menu_end;
 
 
 
+
+
 #define BILLBOARD_YOFFSET   15.0f
 #define FONT_BILLBOARD      2
 #define TEXT_COLOR    0x6CBB3CFF
 
 
-
+float get_time_s();
 void load_font(void);
 void stats_draw_billboard();
 

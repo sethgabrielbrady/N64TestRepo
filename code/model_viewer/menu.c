@@ -22,12 +22,17 @@ int selection_counter = 0;
 bool not_at_menu_end = true;
 
 
+float get_time_s() {
+  return (float)((double)get_ticks_us() / 1000000.0);
+}
+
 void load_font(void)
 {
   fontBillboard = rdpq_font_load("rom:/squarewave.font64");
   rdpq_text_register_font(FONT_BILLBOARD, fontBillboard);
   rdpq_font_style(fontBillboard, 0, &(rdpq_fontstyle_t){.color = color_from_packed32(TEXT_COLOR) });
 }
+
 
 void stats_draw_billboard()
 {
@@ -36,6 +41,7 @@ void stats_draw_billboard()
   int secs = ticks/1000;
   int mem = get_memory_size();
   float fps = display_get_fps();
+  float time = get_time_s();
 
 
 
@@ -51,7 +57,8 @@ void stats_draw_billboard()
 
   //game stats
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+15, "FPS %f", fps);
-  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+25, "ticks %d", ticks);
+  rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+25, "ticks %f", time);
+
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+35, "secs %d", secs);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+45, "mem %d", mem);
   rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, x+2, y+55, "sel %d", selection_counter);
@@ -60,6 +67,7 @@ void stats_draw_billboard()
 
 
   //model selection
+  // selection_counter = MODEL_MAPS_LENGTH;
   int new_menu_center_y = menu_center_y;
   for (int i = 0; i < MODEL_MAPS_LENGTH; i++ ) {
     rdpq_text_printf(&(rdpq_textparms_t){}, FONT_BILLBOARD, 130, new_menu_center_y+(i*10), "Model %i", i+1);

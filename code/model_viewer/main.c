@@ -2,22 +2,23 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
 #include <t3d/t3dmodel.h>
+#include <t3d/t3dskeleton.h>
+#include <t3d/t3danim.h>
 #include <t3d/t3ddebug.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-
 #include "controller.h"
 #include "menu.h"
 #include "models.h"
-
 
 T3DViewport viewport;
 T3DMat4FP* mapMatFP;
 // T3DModel *modelMap;
 // T3DModel *modelMap2;
+
 
 
 // T3DMat4 modelMap; // matrix for our model, this is a "normal" float matrix
@@ -35,6 +36,8 @@ int current_model = 0;
 int selection = 0;
 
 bool last_model = false;
+
+
 
 void game_init(void)
 {
@@ -66,26 +69,42 @@ void game_init(void)
 
   mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
 
+  load_model();
+  modell.skel = t3d_skeleton_create(model);
+  modell.skelBlend = t3d_skeleton_clone(&modell.skel, false); // optimized for blending, has no matrices
+  modell.animWalk = t3d_anim_create(model, "walk");
+  t3d_anim_set_looping(&modell.animWalk, true); // loop this animation
+  t3d_anim_set_playing(&modell.animWalk, true); // start in a paused state
+  t3d_anim_attach(&modell.animWalk, &modell.skelBlend);
+  t3d_anim_set_time(&modell.animWalk, 1.0f);
+
 
   load_font();
   load_models();
-  // modelMap = t3d_model_load("rom:/samus3.t3dm");
-  // modelMap2 = t3d_model_load("rom:/samus5.t3dm");
-  // modelMap = modelMaps[0];
-
 
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
   // i might need to free all models here
+
   t3d_model_draw(modelMaps[current_model]);
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
 }
 
-void update() {
+void update(float deltaTime) {
+    float currSpeed = 0.84f;
+    float animBlend = 0.84 / 0.51f;
 
+    if(animBlend > 1.0f)animBlend = 1.0f;
+
+  if (current_model >= 5) {
+    t3d_skeleton_update(&modell.skel);
+    t3d_anim_update(&modell.animWalk, deltaTime);
+    t3d_anim_set_speed(&modell.animWalk, animBlend + 0.15f);
+    t3d_skeleton_blend(&modell.skel, &modell.skel, &modell.skelBlend, animBlend);
+  }
 }
 
 void update_model(int current_model)
@@ -94,7 +113,11 @@ void update_model(int current_model)
 
   rspq_block_begin();
   t3d_matrix_push(mapMatFP);
-  t3d_model_draw(modelMaps[current_model]);
+  if (current_model >= 6) {
+    t3d_model_draw_skinned(modelMaps[current_model],&modell.skel);
+  }else {
+    t3d_model_draw(modelMaps[current_model]);
+  }
   t3d_matrix_pop(1);
   dplMap = rspq_block_end();
 
@@ -103,6 +126,7 @@ void update_model(int current_model)
 
 void game_loop(float deltaTime)
 {
+
   uint8_t colorAmbient[4] = {0xaa, 0xaa, 0xaa, 0xaa};
   uint8_t colorDir[4]     = {0xdd, 0xdd, 0xdd, 0xdd};
 
@@ -155,14 +179,18 @@ void game_loop(float deltaTime)
       selection = selection_counter - 1;
       current_model = selection;
       update_model(current_model);
+      if (current_model >= 6){
+        t3d_anim_set_playing(&modell.animWalk, true);
+      }
     }
   }
+
   rspq_wait();
   rdpq_sync_tile();
   rdpq_sync_pipe(); // Hardware crashes otherwise
   rdpq_detach_show();
   joypad_poll();
-  update();
+  update(deltaTime);
 }
 
 void game_cleanup(void)
@@ -180,7 +208,11 @@ int main()
   game_init();
   while(1)
   {
-    game_loop(0.0f);
+    float lastTime = get_time_s() - (1.0f / 60.0f);
+    float newTime = get_time_s();
+    float deltaTime = newTime - lastTime;
+    lastTime = newTime;
+    game_loop(deltaTime);
     check_controller_state();
   };
 
