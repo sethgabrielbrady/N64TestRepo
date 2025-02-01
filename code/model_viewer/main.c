@@ -73,8 +73,8 @@ void game_init(void)
   load_model();
   modell.skel = t3d_skeleton_create(model);
   modell.skelBlend = t3d_skeleton_clone(&modell.skel, false); // optimized for blending, has no matrices
-  modell.animWalk = t3d_anim_create(model, "Snake_Walk");
-  t3d_anim_attach(&animWalk, &skelBlend);
+  modell.animWalk = t3d_anim_create(model, "walk");
+  t3d_anim_attach(&modell.animWalk, &modell.skelBlend);
   // set up the anim
   t3d_anim_set_looping(&modell.animWalk, true); // loop this animation
   t3d_anim_set_playing(&modell.animWalk, true); // start in a paused state

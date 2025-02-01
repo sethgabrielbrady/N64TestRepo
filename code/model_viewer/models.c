@@ -18,13 +18,13 @@ model_data modell;
 
 void load_model(void) {
 
-  model = t3d_model_load("rom:/snakeOG.t3dm");
+  model = t3d_model_load("rom:/samus_anim7.t3dm");
   modell.animBlend = 0.0f;
 }
 
 void load_models(void) {
     modelMaps[0] = t3d_model_load("rom:/samus_vlp3.t3dm");
-    modelMaps[1] = t3d_model_load("rom:/samus_vlp2.t3dm");
+    modelMaps[1] = t3d_model_load("rom:/sammy3.t3dm");
     modelMaps[2] = t3d_model_load("rom:/snake2.t3dm");
     modelMaps[3] = t3d_model_load("rom:/snakeOG.t3dm");
     modelMaps[4] = t3d_model_load("rom:/knight.t3dm");
