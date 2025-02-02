@@ -51,7 +51,12 @@ int main()
   T3DModel *modelShadow = t3d_model_load("rom:/shadow.t3dm");
 
   // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
-  T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
+
+// looks good after adjust rotation
+T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
+
+  //correct rotation bad animation
+  //T3DModel *model = t3d_model_load("rom:/samis2.t3dm");
 
 
 
@@ -103,8 +108,8 @@ int main()
   T3DVec3 moveDir = {{0,0,0}};
   T3DVec3 playerPos = {{0,0.15f,0}};
 
-  float rotY = 0.0f;
-  float rotX = 0.0f;
+  float rotY = 3.0f;
+  float rotX = -1.50f;
   float rotZ = 0.0f;
   float currSpeed = 0.0f;
   float animBlend = 0.0f;
@@ -123,7 +128,7 @@ int main()
     // joypad_buttons_t btn = joypad_get_buttons_pressed(JOYPAD_PORT_1);
 
     T3DVec3 newDir = {{
-       (float)joypad.stick_x * 0.05f, 0,
+      (float)joypad.stick_x * 0.05f, 0, // adjust for swapped y and z axis
       -(float)joypad.stick_y * 0.05f
     }};
     float speed = sqrtf(t3d_vec3_len2(&newDir));
@@ -142,11 +147,14 @@ int main()
       moveDir = newDir;
 
       float newAngle = atan2f(moveDir.v[0], moveDir.v[2]);
-      rotY = t3d_lerp_angle(0.0f, newAngle, 0.25f);
+      //rotY = t3d_lerp_angle(0.0f, newAngle, 0.25f);
+      rotY = t3d_lerp_angle(0.0f, 1.0f, newAngle); //adjusting for swapped y and z axis
+
       currSpeed = t3d_lerp(currSpeed, speed * 0.15f, 0.15f);
     } else {
       currSpeed *= 0.8f;
     }
+
 
     // use blend based on speed for smooth transitions
     animBlend = currSpeed / 0.51f;
@@ -191,12 +199,16 @@ int main()
     t3d_skeleton_update(&skel);
 
     // Update player matrix
-    t3d_mat4fp_from_srt_euler(modelMatFP,
-      (float[3]){0.006f, 0.006f, 0.006f},
-      // (float[3]){1.0f, 1.0f, 1.0f},
-      (float[3]){-1.50f, 0.0f, rotY},
 
-      //(float[3]){0.0f,0.0f,0.0f},
+    t3d_mat4fp_from_srt_euler(modelMatFP,
+
+      (float[3]){0.006f, 0.006f, 0.006f},
+      //(float[3]){0.0f, 0.0f, rotY},
+      (float[3]){rotX, 0.0f, rotY}, // puts the model upright
+
+
+      //(float[3]){0.1f, 0.1f, 0.1f},
+      //(float[3]){0.0f,-rotY,0.0f},
       playerPos.v
     );
 
@@ -226,8 +238,11 @@ int main()
     rdpq_sync_pipe();
     // rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "[A] Attack: %d", isAttack);
 
-    posY = 216;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speed: %.4f", currSpeed); posY += 10;
+    posY = 180;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "rotY: %.4f", rotY); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Joypad x: %.4d", joypad.stick_x); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Joypad y: %.4d", joypad.stick_y); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speeeeed: %.4f", currSpeed); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Blend: %.4f", animBlend); posY += 10;
 
     rdpq_detach_show();
