@@ -6,11 +6,16 @@
 #include <t3d/t3danim.h>
 #include <t3d/t3ddebug.h>
 
+
 /**
  * Example project showcasing the usage of the animation system.
  * This includes instancing animations, blending animations, and controlling playback.
  */
 
+bool isJump = false;
+bool isRun = false;
+
+bool aPress = false;
 float get_time_s() {
   return (float)((double)get_ticks_us() / 1000000.0);
 }
@@ -52,8 +57,10 @@ int main()
 
   // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
 
-// looks good after adjust rotation
-T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
+  // looks good after adjust rotation
+  // T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
+  T3DModel *model = t3d_model_load("rom:/multianim.t3dm");
+
 
   //correct rotation bad animation
   //T3DModel *model = t3d_model_load("rom:/samis2.t3dm");
@@ -75,8 +82,18 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
   t3d_anim_attach(&animIdle, &skel); // tells the animation which skeleton to modify
 
   T3DAnim animWalk = t3d_anim_create(model, "walk");
-  // T3DAnim animWalk = t3d_anim_create(model, "walk");
   t3d_anim_attach(&animWalk, &skelBlend);
+
+  T3DAnim animRun = t3d_anim_create(model, "run");
+  t3d_anim_attach(&animRun, &skelBlend);
+
+  T3DAnim animJump = t3d_anim_create(model, "jump");
+  t3d_anim_set_looping(&animJump, false);
+  t3d_anim_attach(&animJump, &skelBlend);
+
+  T3DAnim animCurrent = animIdle;
+
+
 
   // multiple animations can attach to the same skeleton, this will NOT perform any blending
   // rather the last animation that updates "wins", this can be useful if multiple animations touch different bones
@@ -125,7 +142,7 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
     lastTime = newTime;
 
     joypad_inputs_t joypad = joypad_get_inputs(JOYPAD_PORT_1);
-    // joypad_buttons_t btn = joypad_get_buttons_pressed(JOYPAD_PORT_1);
+    joypad_buttons_t btn = joypad_get_buttons_pressed(JOYPAD_PORT_1);
 
     T3DVec3 newDir = {{
       (float)joypad.stick_x * 0.05f, 0, // adjust for swapped y and z axis
@@ -140,6 +157,10 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
     //   isAttack = true;
     // }
 
+
+
+
+
     // Player movement
     if(speed > 0.15f && !isAttack) {
       newDir.v[0] /= speed;
@@ -149,11 +170,39 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
       float newAngle = atan2f(moveDir.v[0], moveDir.v[2]);
       //rotY = t3d_lerp_angle(0.0f, newAngle, 0.25f);
       rotY = t3d_lerp_angle(0.0f, 1.0f, newAngle); //adjusting for swapped y and z axis
-
       currSpeed = t3d_lerp(currSpeed, speed * 0.15f, 0.15f);
     } else {
       currSpeed *= 0.8f;
     }
+
+    if (speed >= 0.6f ) {
+      t3d_anim_set_playing(&animRun, true);
+      t3d_anim_set_looping(&animRun, true);
+      isRun = true;
+    } else {
+      isRun = false;
+    }
+
+    if (btn.a) {
+      aPress = true;
+      t3d_anim_set_playing(&animJump, true);
+      t3d_anim_set_time(&animJump, 0.0f);
+      isJump = true;
+    } else {
+      aPress = false;
+    }
+
+    if (isRun) {
+       currSpeed = 1.2f;
+      // currSpeed = t3d_lerp(currSpeed, speed * 0.35f, 0.35f);
+    } else {
+      currSpeed = t3d_lerp(currSpeed, speed * 0.15f, 0.15f);
+    }
+
+    if (isJump) {
+      currSpeed = 1.2f;
+    }
+
 
 
     // use blend based on speed for smooth transitions
@@ -180,10 +229,23 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
     t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(85.0f), 10.0f, 150.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
+
     // Update the animation and modify the skeleton, this will however NOT recalculate the matrices
     t3d_anim_update(&animIdle, deltaTime);
+
     t3d_anim_set_speed(&animWalk, animBlend + 0.15f);
     t3d_anim_update(&animWalk, deltaTime);
+
+    if (speed >= 0.6f) {
+      t3d_anim_set_speed(&animRun, animBlend + 0.25f);
+      t3d_anim_update(&animRun, deltaTime);
+    }
+
+    if (isJump) {
+      t3d_anim_set_speed(&animRun, animBlend + 0.15f);
+      t3d_anim_update(&animJump, deltaTime);
+      if (!animJump.isPlaying)isJump = false;
+    }
 
     // if(isAttack) {
     //   t3d_anim_update(&animAttack, deltaTime); // attack animation now overrides the idle one
@@ -240,8 +302,8 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
 
     posY = 180;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "rotY: %.4f", rotY); posY += 10;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Joypad x: %.4d", joypad.stick_x); posY += 10;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Joypad y: %.4d", joypad.stick_y); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "a pressed %d", aPress); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "is jump %d", isJump); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speeeeed: %.4f", currSpeed); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Blend: %.4f", animBlend); posY += 10;
 
@@ -253,6 +315,8 @@ T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
 
   t3d_anim_destroy(&animIdle);
   t3d_anim_destroy(&animWalk);
+   t3d_anim_destroy(&animRun);
+  t3d_anim_destroy(&animJump);
   // t3d_anim_destroy(&animAttack);
 
   t3d_model_free(model);
