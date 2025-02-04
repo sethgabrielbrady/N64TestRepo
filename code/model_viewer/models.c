@@ -23,9 +23,9 @@ void load_model(void) {
 }
 
 void load_models(void) {
-    modelMaps[0] = t3d_model_load("rom:/samus_vlp3.t3dm");
-    modelMaps[1] = t3d_model_load("rom:/sammy3.t3dm");
-    modelMaps[2] = t3d_model_load("rom:/snake2.t3dm");
+    modelMaps[0] = t3d_model_load("rom:/samus_vlp5.t3dm");
+    modelMaps[1] = t3d_model_load("rom:/samus_vlp4.t3dm");
+    modelMaps[2] = t3d_model_load("rom:/samus_vlp.t3dm");
     modelMaps[3] = t3d_model_load("rom:/snakeOG.t3dm");
     modelMaps[4] = t3d_model_load("rom:/knight.t3dm");
     modelMaps[5] = t3d_model_load("rom:/samus_anim2.t3dm");

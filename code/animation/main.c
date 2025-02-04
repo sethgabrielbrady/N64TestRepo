@@ -14,11 +14,17 @@
 
 bool isJump = false;
 bool isRun = false;
-
+bool shotFired = false;
+float shotTimer = 0.0f;
 bool aPress = false;
+
+#define SHOT_TIME_START   0.0f
+#define SHOT_TIME_END     0.222f
+
 float get_time_s() {
   return (float)((double)get_ticks_us() / 1000000.0);
 }
+
 
 int main()
 {
@@ -38,28 +44,35 @@ int main()
   T3DViewport viewport = t3d_viewport_create();
 
   T3DMat4FP* modelMatFP = malloc_uncached(sizeof(T3DMat4FP));
+
   T3DMat4FP* mapMatFP = malloc_uncached(sizeof(T3DMat4FP));
+
+  T3DMat4FP* cubeMatFP = malloc_uncached(sizeof(T3DMat4FP));
+
   t3d_mat4fp_from_srt_euler(mapMatFP, (float[3]){0.3f, 0.3f, 0.3f}, (float[3]){0, 0, 0}, (float[3]){0, 0, -10});
 
-  T3DVec3 camPos = {{0, 45.0f, 80.0f}};
+  T3DVec3 camPos = {{0, 45.0f, 90.0f}};
   T3DVec3 camTarget = {{0, 0,-10}};
 
   T3DVec3 lightDirVec = {{1.0f, 1.0f, 1.0f}};
   t3d_vec3_norm(&lightDirVec);
 
-  uint8_t colorAmbient[4] = {0xCC, 0xCC, 0xCC, 0x00};
-  uint8_t colorDir[4]     = {0xff, 0xff, 0xff, 0xff};
+  // uint8_t colorAmbient[4] = {0xCC, 0xCC, 0xCC, 0x00};
+  // uint8_t colorDir[4]     = {0xff, 0xff, 0xff, 0xff};
+  uint8_t colorAmbient[4] = {0xaa, 0xaa, 0xaa, 0xaa};
+  uint8_t colorDir[4]     = {0xdd, 0xdd, 0xdd, 0xdd};
 
   // uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
-  T3DModel *modelMap = t3d_model_load("rom:/grid.t3dm");
+  T3DModel *modelMap = t3d_model_load("rom:/grid2.t3dm");
   T3DModel *modelShadow = t3d_model_load("rom:/shadow.t3dm");
 
   // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
 
   // looks good after adjust rotation
   // T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
-  T3DModel *model = t3d_model_load("rom:/multianim.t3dm");
+  T3DModel *model = t3d_model_load("rom:/brightly.t3dm");
+  T3DModel *cube = t3d_model_load("rom:/testcube.t3dm");
 
 
   //correct rotation bad animation
@@ -87,9 +100,13 @@ int main()
   T3DAnim animRun = t3d_anim_create(model, "run");
   t3d_anim_attach(&animRun, &skelBlend);
 
-  T3DAnim animJump = t3d_anim_create(model, "jump");
+  T3DAnim animJump = t3d_anim_create(model, "jump2");
   t3d_anim_set_looping(&animJump, false);
   t3d_anim_attach(&animJump, &skelBlend);
+
+  // T3DAnim animIdleJump = t3d_anim_create(model, "idle_jump");
+  // t3d_anim_set_looping(&animIdleJump, false);
+  // t3d_anim_attach(&animIdleJump, &skelBlend);
 
   T3DAnim animCurrent = animIdle;
 
@@ -104,19 +121,27 @@ int main()
 
   rspq_block_begin();
     t3d_matrix_push(modelMatFP);
-    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+    //rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
     t3d_model_draw_skinned(model, &skel); // as in the last example, draw skinned with the main skeleton
     rdpq_set_prim_color(RGBA32(00, 00, 00, 120));
     t3d_model_draw(modelShadow);
+
     t3d_matrix_pop(1);
   rspq_block_t *dplSnake = rspq_block_end();
 
   rspq_block_begin();
     t3d_matrix_push(mapMatFP);
-    rdpq_set_prim_color(RGBA32(00, 00, 00, 00));
+    rdpq_set_prim_color(RGBA32(00, 00, 00, 120));
     t3d_model_draw(modelMap);
     t3d_matrix_pop(1);
   rspq_block_t *dplMap = rspq_block_end();
+
+  rspq_block_begin();
+    t3d_matrix_push(cubeMatFP);
+    rdpq_set_prim_color(RGBA32(00, 00, 00, 120));
+    t3d_model_draw(cube);
+    t3d_matrix_pop(1);
+  rspq_block_t *dplCube = rspq_block_end();
 
 
   float lastTime = get_time_s() - (1.0f / 60.0f);
@@ -124,13 +149,16 @@ int main()
 
   T3DVec3 moveDir = {{0,0,0}};
   T3DVec3 playerPos = {{0,0.15f,0}};
+  T3DVec3 cubePos = {{0,playerPos.v[1]+21,0}};
 
-  float rotY = 3.0f;
+
+  float rotY = 0.0f;
   float rotX = -1.50f;
   float rotZ = 0.0f;
   float currSpeed = 0.0f;
   float animBlend = 0.0f;
   bool isAttack = false;
+  float shotSpeed = 0.0f;
 
   for(;;)
   {
@@ -159,14 +187,13 @@ int main()
 
 
 
-
-
     // Player movement
     if(speed > 0.15f && !isAttack) {
       newDir.v[0] /= speed;
       newDir.v[2] /= speed;
       moveDir = newDir;
 
+      // what does this return?
       float newAngle = atan2f(moveDir.v[0], moveDir.v[2]);
       //rotY = t3d_lerp_angle(0.0f, newAngle, 0.25f);
       rotY = t3d_lerp_angle(0.0f, 1.0f, newAngle); //adjusting for swapped y and z axis
@@ -174,8 +201,7 @@ int main()
     } else {
       currSpeed *= 0.8f;
     }
-
-    if (speed >= 0.6f ) {
+ if (speed >= 0.6f) {
       t3d_anim_set_playing(&animRun, true);
       t3d_anim_set_looping(&animRun, true);
       isRun = true;
@@ -183,26 +209,31 @@ int main()
       isRun = false;
     }
 
-    if (btn.a) {
+    if (btn.a && !isJump) {
       aPress = true;
+      isJump = true;
       t3d_anim_set_playing(&animJump, true);
       t3d_anim_set_time(&animJump, 0.0f);
-      isJump = true;
     } else {
       aPress = false;
     }
 
+     if (btn.b ) {
+        shotFired = true;
+        shotTimer = 0.0f;
+     }
+
+
     if (isRun) {
-       currSpeed = 1.2f;
+       currSpeed = 1.5f;
       // currSpeed = t3d_lerp(currSpeed, speed * 0.35f, 0.35f);
     } else {
       currSpeed = t3d_lerp(currSpeed, speed * 0.15f, 0.15f);
     }
 
     if (isJump) {
-      currSpeed = 1.2f;
+      currSpeed = 1.5f;
     }
-
 
 
     // use blend based on speed for smooth transitions
@@ -212,8 +243,29 @@ int main()
     // move player...
     playerPos.v[0] += moveDir.v[0] * currSpeed;
     playerPos.v[2] += moveDir.v[2] * currSpeed;
+
+
+    shotSpeed = t3d_lerp(shotSpeed, 10 * 0.15f, 0.15f); // fix this
+
+    if (shotFired) {
+      shotTimer += deltaTime;
+      if (shotTimer > SHOT_TIME_START && shotTimer < SHOT_TIME_END) {
+        cubePos.v[0] += moveDir.v[0] * (shotSpeed*10);
+        cubePos.v[1] = playerPos.v[1]+21;
+        cubePos.v[2] += moveDir.v[2] * (shotSpeed*10);
+      } else {
+        shotFired = false;
+      }
+    } else {
+      cubePos.v[0] = playerPos.v[0];
+      cubePos.v[1] = playerPos.v[1]+21;
+      cubePos.v[2] = playerPos.v[2];
+    }
+
+
     // ...and limit position inside the box
-    const float BOX_SIZE = 140.0f;
+    // const float BOX_SIZE = 140.0f;
+    const float BOX_SIZE = 240.0f;
     if(playerPos.v[0] < -BOX_SIZE)playerPos.v[0] = -BOX_SIZE;
     if(playerPos.v[0] >  BOX_SIZE)playerPos.v[0] =  BOX_SIZE;
     if(playerPos.v[2] < -BOX_SIZE)playerPos.v[2] = -BOX_SIZE;
@@ -221,12 +273,14 @@ int main()
 
     // position the camera behind the player
     camTarget = playerPos;
-    camTarget.v[2] -= 20;
+    camTarget.v[2] -= 10;
     camPos.v[0] = camTarget.v[0];
     camPos.v[1] = camTarget.v[1] + 45;
     camPos.v[2] = camTarget.v[2] + 65;
 
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(85.0f), 10.0f, 150.0f);
+    // t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
+
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
@@ -237,15 +291,17 @@ int main()
     t3d_anim_update(&animWalk, deltaTime);
 
     if (speed >= 0.6f) {
-      t3d_anim_set_speed(&animRun, animBlend + 0.25f);
+      // t3d_anim_set_speed(&animRun, animBlend + 0.25f);
       t3d_anim_update(&animRun, deltaTime);
     }
 
-    if (isJump) {
-      t3d_anim_set_speed(&animRun, animBlend + 0.15f);
+
+    if (isJump ) {
+      // t3d_anim_set_speed(&animJump, animBlend + 0.35f);
       t3d_anim_update(&animJump, deltaTime);
       if (!animJump.isPlaying)isJump = false;
     }
+
 
     // if(isAttack) {
     //   t3d_anim_update(&animAttack, deltaTime); // attack animation now overrides the idle one
@@ -262,11 +318,12 @@ int main()
 
     // Update player matrix
 
+    // this is where player movement is set
     t3d_mat4fp_from_srt_euler(modelMatFP,
-
-      (float[3]){0.006f, 0.006f, 0.006f},
+      (float[3]){0.25f, 0.25f, 0.25f},
+      //(float[3]){0.006f, 0.006f, 0.006f},
       //(float[3]){0.0f, 0.0f, rotY},
-      (float[3]){rotX, 0.0f, rotY}, // puts the model upright
+      (float[3]){rotX, 0.0f, rotY}, // rotation - puts the model upright
 
 
       //(float[3]){0.1f, 0.1f, 0.1f},
@@ -274,12 +331,23 @@ int main()
       playerPos.v
     );
 
+    t3d_mat4fp_from_srt_euler(cubeMatFP,
+      (float[3]){0.025f, 0.025f, 0.025f},
+      //(float[3]){0.006f, 0.006f, 0.006f},
+      //(float[3]){0.0f, 0.0f, 0.0f},
+      (float[3]){rotX, 0.0f, rotY}, // rotation - puts the model upright
+      cubePos.v
+    );
+
+
     // ======== Draw (3D) ======== //
     rdpq_attach(display_get(), display_get_zbuf());
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
 
-    t3d_screen_clear_color(RGBA32(255, 255, 255, 0xFF));
+    //t3d_screen_clear_color(RGBA32(255, 255, 255, 0xFF));
+    t3d_screen_clear_color(RGBA32(00, 00, 00, 0xFF)); // black bg
+
 
     // t3d_screen_clear_color(RGBA32(224, 180, 96, 0xFF));
     t3d_screen_clear_depth();
@@ -290,6 +358,11 @@ int main()
 
     rspq_block_run(dplMap);
     rspq_block_run(dplSnake);
+
+    if (shotFired) {
+      rspq_block_run(dplCube);
+    }
+    //rspq_block_run(dplCube);
 
     syncPoint = rspq_syncpoint_new();
 
@@ -302,8 +375,10 @@ int main()
 
     posY = 180;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "rotY: %.4f", rotY); posY += 10;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "a pressed %d", aPress); posY += 10;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "is jump %d", isJump); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "x %d", joypad.stick_x); posY += 10;
+
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "x %d", joypad.stick_y); posY += 10;
+
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speeeeed: %.4f", currSpeed); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Blend: %.4f", animBlend); posY += 10;
 
