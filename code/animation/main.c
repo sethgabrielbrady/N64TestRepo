@@ -18,6 +18,7 @@ bool shotFired = false;
 float shotTimer = 0.0f;
 bool aPress = false;
 
+
 #define SHOT_TIME_START   0.0f
 #define SHOT_TIME_END     0.222f
 
@@ -71,7 +72,7 @@ int main()
 
   // looks good after adjust rotation
   // T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
-  T3DModel *model = t3d_model_load("rom:/brightly.t3dm");
+  T3DModel *model = t3d_model_load("rom:/otest.t3dm");
   T3DModel *cube = t3d_model_load("rom:/testcube.t3dm");
 
 
@@ -88,7 +89,7 @@ int main()
   // Now create animation instances (by name), the data in 'model' is fixed,
   // whereas 'anim' contains all the runtime data.
   // Note that tiny3d internally keeps no track of animations, it's up to the user to manage and play them.
-  T3DAnim animIdle = t3d_anim_create(model, "idle");
+  T3DAnim animIdle = t3d_anim_create(model, "idleShoot");
   t3d_anim_set_looping(&animIdle, true); // don't loop this animation
   t3d_anim_set_playing(&animIdle, true); // start in a paused state
 
@@ -149,7 +150,7 @@ int main()
 
   T3DVec3 moveDir = {{0,0,0}};
   T3DVec3 playerPos = {{0,0.15f,0}};
-  T3DVec3 cubePos = {{0,playerPos.v[1]+21,0}};
+  T3DVec3 cubePos = {{0,playerPos.v[1]+26,0}};
 
 
   float rotY = 0.0f;
@@ -232,7 +233,8 @@ int main()
     }
 
     if (isJump) {
-      currSpeed = 1.5f;
+      // currSpeed = 1.5f;
+      currSpeed *= 0.8f
     }
 
 
@@ -245,20 +247,20 @@ int main()
     playerPos.v[2] += moveDir.v[2] * currSpeed;
 
 
-    shotSpeed = t3d_lerp(shotSpeed, 10 * 0.15f, 0.15f); // fix this
+    shotSpeed = 10.0f;
 
     if (shotFired) {
       shotTimer += deltaTime;
       if (shotTimer > SHOT_TIME_START && shotTimer < SHOT_TIME_END) {
-        cubePos.v[0] += moveDir.v[0] * (shotSpeed*10);
-        cubePos.v[1] = playerPos.v[1]+21;
-        cubePos.v[2] += moveDir.v[2] * (shotSpeed*10);
+        cubePos.v[0] += moveDir.v[0] * shotSpeed;
+        cubePos.v[1] = playerPos.v[1]+26;
+        cubePos.v[2] += moveDir.v[2] * shotSpeed;
       } else {
         shotFired = false;
       }
     } else {
-      cubePos.v[0] = playerPos.v[0];
-      cubePos.v[1] = playerPos.v[1]+21;
+      cubePos.v[0] = playerPos.v[0] - 4; // good case for signum
+      cubePos.v[1] = playerPos.v[1]+26;
       cubePos.v[2] = playerPos.v[2];
     }
 
@@ -273,7 +275,7 @@ int main()
 
     // position the camera behind the player
     camTarget = playerPos;
-    camTarget.v[2] -= 10;
+    camTarget.v[2] -= 25;
     camPos.v[0] = camTarget.v[0];
     camPos.v[1] = camTarget.v[1] + 45;
     camPos.v[2] = camTarget.v[2] + 65;
@@ -332,7 +334,7 @@ int main()
     );
 
     t3d_mat4fp_from_srt_euler(cubeMatFP,
-      (float[3]){0.025f, 0.025f, 0.025f},
+      (float[3]){0.0125f, 0.0125f, 0.0125f},
       //(float[3]){0.006f, 0.006f, 0.006f},
       //(float[3]){0.0f, 0.0f, 0.0f},
       (float[3]){rotX, 0.0f, rotY}, // rotation - puts the model upright
