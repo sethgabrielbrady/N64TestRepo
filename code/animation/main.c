@@ -234,7 +234,7 @@ int main()
 
     if (isJump) {
       // currSpeed = 1.5f;
-      currSpeed *= 0.8f
+      currSpeed *= 0.8f;
     }
 
 
