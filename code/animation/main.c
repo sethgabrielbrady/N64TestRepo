@@ -15,8 +15,12 @@
 bool isJump = false;
 bool isRun = false;
 bool shotFired = false;
-float shotTimer = 0.0f;
 bool aPress = false;
+bool playerMove = true;
+
+float shotTimer = 0.0f;
+int shotCount = 0;
+bool closeUp = false;
 
 
 #define SHOT_TIME_START   0.0f
@@ -25,7 +29,9 @@ bool aPress = false;
 float get_time_s() {
   return (float)((double)get_ticks_us() / 1000000.0);
 }
-
+ int signum(int num) {
+  return (num > 0) - (num < 0);
+ };
 
 int main()
 {
@@ -66,7 +72,7 @@ int main()
   // uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
   T3DModel *modelMap = t3d_model_load("rom:/grid2.t3dm");
-  T3DModel *modelShadow = t3d_model_load("rom:/shadow.t3dm");
+  T3DModel *modelShadow = t3d_model_load("rom:/shadow2.t3dm");
 
   // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
 
@@ -150,6 +156,8 @@ int main()
 
   T3DVec3 moveDir = {{0,0,0}};
   T3DVec3 playerPos = {{0,0.15f,0}};
+  T3DVec3 lastPlayerPos = playerPos;
+
   T3DVec3 cubePos = {{0,playerPos.v[1]+26,0}};
 
 
@@ -172,6 +180,8 @@ int main()
 
     joypad_inputs_t joypad = joypad_get_inputs(JOYPAD_PORT_1);
     joypad_buttons_t btn = joypad_get_buttons_pressed(JOYPAD_PORT_1);
+    joypad_buttons_t btnHeld = joypad_get_buttons_held(JOYPAD_PORT_1);
+
 
     T3DVec3 newDir = {{
       (float)joypad.stick_x * 0.05f, 0, // adjust for swapped y and z axis
@@ -186,13 +196,24 @@ int main()
     //   isAttack = true;
     // }
 
+    if(btnHeld.z ) {
+      closeUp = true;
+      playerMove = false;
+    } else {
+      closeUp = false;
+      playerMove = true;
+    }
+
+
 
 
     // Player movement
-    if(speed > 0.15f && !isAttack) {
+    if(speed > 0.15f) {
       newDir.v[0] /= speed;
       newDir.v[2] /= speed;
+
       moveDir = newDir;
+
 
       // what does this return?
       float newAngle = atan2f(moveDir.v[0], moveDir.v[2]);
@@ -202,7 +223,8 @@ int main()
     } else {
       currSpeed *= 0.8f;
     }
- if (speed >= 0.6f) {
+
+    if (speed >= 0.6f) {
       t3d_anim_set_playing(&animRun, true);
       t3d_anim_set_looping(&animRun, true);
       isRun = true;
@@ -219,7 +241,8 @@ int main()
       aPress = false;
     }
 
-     if (btn.b ) {
+     if (btn.b && shotCount < 3 ) {
+        shotCount++;
         shotFired = true;
         shotTimer = 0.0f;
      }
@@ -233,8 +256,17 @@ int main()
     }
 
     if (isJump) {
-      // currSpeed = 1.5f;
-      currSpeed *= 0.8f;
+      currSpeed = 1.5f;
+      //playerPos.v[1] += 0.08f;
+    } else {
+      playerPos.v[1] = 0.15f;
+    }
+
+    //height test
+    if (playerPos.v[0] < 0.0f && playerPos.v[0] > -130.0f) {
+      if (playerPos.v[2] < -10.0f && playerPos.v[2] > -63.0f) {
+        playerPos.v[1] = 18.0f;
+      }
     }
 
 
@@ -243,8 +275,13 @@ int main()
     if(animBlend > 1.0f)animBlend = 1.0f;
 
     // move player...
-    playerPos.v[0] += moveDir.v[0] * currSpeed;
-    playerPos.v[2] += moveDir.v[2] * currSpeed;
+    if( playerMove ) {
+      playerPos.v[0] += moveDir.v[0] * currSpeed;
+      playerPos.v[2] += moveDir.v[2] * currSpeed;
+      lastPlayerPos = playerPos;
+    } else {
+      playerPos = lastPlayerPos;
+    }
 
 
     shotSpeed = 10.0f;
@@ -256,10 +293,11 @@ int main()
         cubePos.v[1] = playerPos.v[1]+26;
         cubePos.v[2] += moveDir.v[2] * shotSpeed;
       } else {
+        shotCount --;
         shotFired = false;
       }
     } else {
-      cubePos.v[0] = playerPos.v[0] - 4; // good case for signum
+      cubePos.v[0] = playerPos.v[0] - (4*signum(moveDir.v[0])); // good case for signum
       cubePos.v[1] = playerPos.v[1]+26;
       cubePos.v[2] = playerPos.v[2];
     }
@@ -275,7 +313,15 @@ int main()
 
     // position the camera behind the player
     camTarget = playerPos;
-    camTarget.v[2] -= 25;
+    camTarget.v[1] = 0.150f;
+
+    if (closeUp) {
+      camTarget.v[2] -= 65;
+      camTarget.v[1] = -10;
+    } else {
+      camTarget.v[2] -= 25;
+    }
+
     camPos.v[0] = camTarget.v[0];
     camPos.v[1] = camTarget.v[1] + 45;
     camPos.v[2] = camTarget.v[2] + 65;
@@ -375,12 +421,10 @@ int main()
     rdpq_sync_pipe();
     // rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "[A] Attack: %d", isAttack);
 
-    posY = 180;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "rotY: %.4f", rotY); posY += 10;
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "x %d", joypad.stick_x); posY += 10;
-
-    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "x %d", joypad.stick_y); posY += 10;
-
+    posY = 150;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "x %f", playerPos.v[0]); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "y %f", playerPos.v[1]); posY += 10;
+    rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "z %f", playerPos.v[2]); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Speeeeed: %.4f", currSpeed); posY += 10;
     rdpq_text_printf(NULL, FONT_BUILTIN_DEBUG_MONO, posX, posY, "Blend: %.4f", animBlend); posY += 10;
 
