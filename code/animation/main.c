@@ -28,6 +28,7 @@ float newAngle = 0.0f;
 float rotY = 0.0f;
 float currentHeight = 0.15f;
 float x1 = 0.0f;
+bool isRoll = false;
 
 
 
@@ -87,7 +88,7 @@ int main()
 
   // looks good after adjust rotation
   // T3DModel *model = t3d_model_load("rom:/sammy3.t3dm");
-  T3DModel *model = t3d_model_load("rom:/otest.t3dm");
+  T3DModel *model = t3d_model_load("rom:/samus_otest.t3dm");
   T3DModel *cube = t3d_model_load("rom:/testcube.t3dm");
 
 
@@ -114,7 +115,14 @@ int main()
   T3DAnim animRun = t3d_anim_create(model, "run");
   t3d_anim_attach(&animRun, &skelBlend);
 
+  T3DAnim animRoll = t3d_anim_create(model, "roll");
+  t3d_anim_set_looping(&animRoll, false);
+
+  t3d_anim_attach(&animRoll, &skelBlend);
+
   T3DAnim animJump = t3d_anim_create(model, "jump2");
+  //T3DAnim animJump = t3d_anim_create(model, "flipjump");
+
   t3d_anim_set_looping(&animJump, false);
   t3d_anim_attach(&animJump, &skelBlend);
 
@@ -249,6 +257,13 @@ int main()
         cubePos.v[1] = playerPos.v[1]+26;
      }
 
+
+      if (btn.c_down && (!isRoll && playerMove)) {
+        isRoll = true;
+        t3d_anim_set_playing(&animRoll, true);
+        t3d_anim_set_time(&animRoll, 0.0f);
+     }
+
     if (newDir.v[2] > 0.0f || newDir.v[2] < 0.0f) {
         lastZDir = newDir.v[2];
       }else {
@@ -268,7 +283,7 @@ int main()
       //playerPos.v[1] += 0.08f;
       if (!isRun) {
         moveDir.v[0] = 0.0f;
-        moveDir.v[1] += 0.08f;
+        moveDir.v[1] += 0.38f;
         moveDir.v[2] = 0.0f;
       }
     } else {
@@ -400,6 +415,14 @@ int main()
       if (!animJump.isPlaying)isJump = false;
     }
 
+    if (isRoll) {
+      t3d_anim_update(&animRoll, deltaTime*1.5f);
+      if(!animRoll.isPlaying)isRoll = false;
+    }
+
+
+
+
 
     // if(isAttack) {
     //   t3d_anim_update(&animAttack, deltaTime); // attack animation now overrides the idle one
@@ -500,6 +523,8 @@ int main()
   t3d_anim_destroy(&animWalk);
    t3d_anim_destroy(&animRun);
   t3d_anim_destroy(&animJump);
+  t3d_anim_destroy(&animRoll);
+
   // t3d_anim_destroy(&animAttack);
 
   t3d_model_free(model);
