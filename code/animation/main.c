@@ -29,6 +29,10 @@ float rotY = 0.0f;
 float currentHeight = 0.15f;
 float x1 = 0.0f;
 bool isRoll = false;
+bool overRide = false;
+
+
+T3DModel *modelMap = NULL;
 
 
 
@@ -81,7 +85,9 @@ int main()
   // uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
 
   //Grid4 is 15 X 24
-  T3DModel *modelMap = t3d_model_load("rom:/grid4.t3dm");
+  modelMap = t3d_model_load("rom:/grid4.t3dm");
+
+  // T3DModel *modelMap = t3d_model_load("rom:/grid4.t3dm");
   T3DModel *modelShadow = t3d_model_load("rom:/shadow2.t3dm");
 
   // Model Credits: Quaternius (CC0) https://quaternius.com/packs/easyenemy.html
@@ -388,12 +394,19 @@ int main()
     }
 
     camPos.v[0] = camTarget.v[0];
-    camPos.v[1] = camTarget.v[1] + 45;
-    camPos.v[2] = camTarget.v[2] + 65;
+    if (!overRide) {
+      camPos.v[2] = camTarget.v[2] + 65;
+          camPos.v[1] = camTarget.v[1] + 45;
+
+    }
+    //camPos.v[1] = camTarget.v[1] + 45;
+    // camPos.v[1] = camTarget.v[1] + 45;
+
+   // camPos.v[2] = camTarget.v[2] + 65;
 
     // t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
-
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
+    t3d_viewport_set_perspective(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
+    //t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 10.0f, 150.0f);
     t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0,1,0}});
 
 
